@@ -790,6 +790,7 @@ namespace ng
 
 		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
 
+		auto markBackground = CGColorCreateGenericRGB(252.0 / 255.0, 203.0 / 255.0, 188.0 / 255.0, 1);
 		CGColorRef background = _theme->background(scope::to_s(_buffer.scope(0).left));
 		if(drawBackground)
 			render::fill_rect(context, background, visibleRect);
@@ -804,7 +805,19 @@ namespace ng
 		if(drawBackground)
 		{
 			foreach(row, firstY, _rows.lower_bound(yMax, &row_y_comp))
-				row->value.draw_background(_theme, *_metrics, context, isFlipped, visibleRect, background, _buffer, row->offset._length, CGPointMake(_margin.left, _margin.top + row->offset._height));
+			{
+				auto from = _buffer.begin(row->offset._softlines);
+				auto to = _buffer.eol(row->offset._softlines);
+				auto marks = _buffer.get_marks(from, to, "error");
+
+				auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
+
+				if (!marks.empty())
+					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, markBackground, anchor.y);
+
+				else
+					row->value.draw_background(_theme, *_metrics, context, isFlipped, visibleRect, background, _buffer, row->offset._length, anchor);
+			}
 		}
 
 		base_colors_t const& baseColors = get_base_colors(_theme->is_dark());
