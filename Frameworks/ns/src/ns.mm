@@ -291,3 +291,30 @@ std::string to_s (NSEvent* anEvent, bool preserveNumPadFlag)
 
 	return string_for(newFlags) + (keyString == NULL_STR ? string_for(key, CGEventFlags(flags & ~kCGEventFlagMaskControl)) : keyString);
 }
+
+std::vector<std::string> to_a (NSArray* anArray)
+{
+	std::vector<std::string> array;
+
+	if (anArray)
+		array.reserve([anArray count]);
+
+	for (id e in anArray)
+	{
+		NSString* str = e;
+
+		if (![e isKindOfClass:[NSString class]])
+		{
+			if([e respondsToSelector:@selector(string)])
+				str = [e string];
+			else if([e respondsToSelector:@selector(description)])
+				str = [e description];
+			else
+				str = @"<ERROR>";
+		}
+
+		array.push_back(to_s(str));
+	}
+
+	return array;
+}

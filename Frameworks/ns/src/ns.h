@@ -11,6 +11,7 @@ PUBLIC std::string to_s (NSData* aString);
 PUBLIC std::string to_s (NSError* anError);
 PUBLIC std::string to_s (NSEvent* anEvent, bool preserveNumPadFlag = false);
 PUBLIC std::string to_s (id someObject);
+PUBLIC std::vector<std::string> to_a (NSArray* anArray);
 
 namespace ns
 {
