@@ -65,6 +65,7 @@ PUBLIC @interface OakTextView : OakView
 - (NSPoint)positionForWindowUnderCaret;
 - (scope::context_t)scopeContext;
 - (folding_state_t)foldingStateForLine:(NSUInteger)lineNumber;
+- (void) setMarks:(NSArray*)marks line:(size_t)aLine;
 
 - (void)updateDocumentMetadata;
 

@@ -3066,6 +3066,28 @@ static char const* kOakMenuItemTitle = "OakMenuItemTitle";
 	return kFoldingNone;
 }
 
+- (void) setMarks:(NSArray*)marks line:(NSUInteger)aLine
+{
+	if (document)
+	{
+		auto& buf = document->buffer();
+		buf.set_mark(buf.begin(aLine - 1), "error", to_a(marks));
+		[self setNeedsDisplay:YES];
+	}
+}
+
+- (void) appendMark:(NSString*)data line:(NSUInteger)aLine
+{
+	ASSERT(data != nil);
+
+	if (document)
+	{
+		auto& buf = document->buffer();
+		buf.append_mark(buf.begin(aLine - 1), "error", to_s(data));
+		[self setNeedsDisplay:YES];
+	}
+}
+
 - (GVLineRecord)lineRecordForPosition:(CGFloat)yPos
 {
 	if(!layout)
