@@ -778,6 +778,31 @@ namespace ng
 		}
 	}
 
+	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, CGColorRef backgroundColor, CGFloat anchorY, CGFloat rightMargin) const
+	{
+		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
+
+		auto cfString = CFSTR("this is a test error string");
+		auto attrString = CFAttributedStringCreate(kCFAllocatorDefault, cfString, NULL);
+		auto ctLine = CTLineCreateWithAttributedString(attrString);
+		auto stringWidth = CTLineGetTypographicBounds(ctLine, NULL, NULL, NULL);
+		auto x = visibleWidth - stringWidth - rightMargin;
+
+		for (auto line : softlines(metrics, false))
+		{
+			auto pos = CGPointMake(x, anchorY + line.baseline);
+			printf("%lu\n", line.width());
+			CGContextSaveGState(context);
+
+				if(isFlipped)
+					CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
+
+				CGContextSetTextPosition(context, pos.x, pos.y);
+				CTLineDraw(ctLine, context);
+			CGContextRestoreGState(context);
+		}
+	}
+
 	// ========
 	// = to_s =
 	// ========
