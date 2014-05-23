@@ -845,7 +845,18 @@ namespace ng
 		}
 
 		foreach(row, firstY, _rows.lower_bound(yMax, &row_y_comp))
-			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, CGPointMake(_margin.left, _margin.top + row->offset._height));
+		{
+			auto from = _buffer.begin(row->offset._softlines);
+			auto to = _buffer.eol(row->offset._softlines);
+			auto marks = _buffer.get_marks(from, to, "error");
+
+			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
+
+			if (!marks.empty())
+				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, markBackground, anchor.y, _margin.right);
+
+			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
+		}
 
 		if(_draw_caret && !_drop_marker)
 		{
