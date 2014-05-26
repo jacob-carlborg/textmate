@@ -778,7 +778,7 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, CGColorRef backgroundColor, CGFloat anchorY, CGFloat rightMargin) const
+	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin) const
 	{
 		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
 
@@ -786,21 +786,33 @@ namespace ng
 		auto attrString = CFAttributedStringCreate(kCFAllocatorDefault, cfString, NULL);
 		auto ctLine = CTLineCreateWithAttributedString(attrString);
 		auto stringWidth = CTLineGetTypographicBounds(ctLine, NULL, NULL, NULL);
+		auto rightMargin = leftMargin / 4;
+
+		auto lines = softlines(metrics, false);
+		auto line = lines.back();
+		auto node = _nodes.begin() + line.first;
+
 		auto x = visibleWidth - stringWidth - rightMargin;
+		auto pos = CGPointMake(x, anchorY + line.y + line.baseline);
+		auto lineWidth = lines.size() == 1 ? width() : node->width();
 
-		for (auto line : softlines(metrics, false))
-		{
-			auto pos = CGPointMake(x, anchorY + line.baseline);
-			printf("%lu\n", line.width());
-			CGContextSaveGState(context);
+		if (node != _nodes.end() && lineWidth + leftMargin > pos.x - leftMargin)
+			linePos.y += line.height;
 
-				if(isFlipped)
-					CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
+		CGRect backgroundRect;
+		backgroundRect.origin.x = pos.x - leftMargin;
+		backgroundRect.origin.y = pos.y - 4;
+		backgroundRect.size.width = stringWidth + leftMargin + rightMargin;
+		backgroundRect.size.height = line.height;
 
-				CGContextSetTextPosition(context, pos.x, pos.y);
-				CTLineDraw(ctLine, context);
-			CGContextRestoreGState(context);
-		}
+		CGContextSaveGState(context);
+			if(isFlipped)
+				CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
+
+			render::fill_rect(context, backgroundColor, backgroundRect);
+			CGContextSetTextPosition(context, pos.x, pos.y);
+			CTLineDraw(ctLine, context);
+		CGContextRestoreGState(context);
 	}
 
 	// ========
