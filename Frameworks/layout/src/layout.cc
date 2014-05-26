@@ -790,8 +790,10 @@ namespace ng
 
 		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
 
-		auto markBackground = CGColorCreateGenericRGB(252.0 / 255.0, 203.0 / 255.0, 188.0 / 255.0, 1);
+		auto markLineBackground = CGColorCreateGenericRGB(255.0 / 255.0, 207.0 / 255.0, 188.0 / 255.0, 1);
+		auto markTextBackground = CGColorCreateGenericRGB(255.0 / 255.0, 173.0 / 255.0, 154.0 / 255.0, 1);
 		CGColorRef background = _theme->background(scope::to_s(_buffer.scope(0).left));
+
 		if(drawBackground)
 			render::fill_rect(context, background, visibleRect);
 
@@ -813,7 +815,7 @@ namespace ng
 				auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
 				if (!marks.empty())
-					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, markBackground, anchor.y);
+					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, markLineBackground, anchor.y);
 
 				else
 					row->value.draw_background(_theme, *_metrics, context, isFlipped, visibleRect, background, _buffer, row->offset._length, anchor);
@@ -853,7 +855,7 @@ namespace ng
 			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
 			if (!marks.empty())
-				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, markBackground, anchor.y, _margin.right);
+				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, markTextBackground, anchor.y, _margin.right);
 
 			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
 		}
