@@ -850,12 +850,28 @@ namespace ng
 		{
 			auto from = _buffer.begin(row->offset._softlines);
 			auto to = _buffer.eol(row->offset._softlines);
-			auto marks = _buffer.get_marks(from, to, "error");
+			auto marks = _buffer.get_marks_with_data(from, to, "error");
 
 			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
 			if (!marks.empty())
-				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, markTextBackground, anchor.y, _margin.right);
+			{
+				std::vector<CFStringRef> marksData;
+
+				if (marks.size() == 1)
+					marksData.reserve(marks.begin()->second.size());
+
+				for (auto& mark : marks)
+				{
+					for (auto& m : mark.second)
+					{
+						auto str = CFStringCreateWithCString(kCFAllocatorDefault, m.c_str(), kCFStringEncodingUTF8);
+						marksData.push_back(str);
+					}
+				}
+
+				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right);
+			}
 
 			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
 		}
