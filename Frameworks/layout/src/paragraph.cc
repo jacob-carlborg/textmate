@@ -778,14 +778,22 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin) const
+	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin) const
 	{
-		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
+		std::vector<CTLineRef> ctLines;
+		ctLines.reserve(marks.size());
 
-		auto cfString = CFSTR("this is a test error string");
-		auto attrString = CFAttributedStringCreate(kCFAllocatorDefault, cfString, NULL);
-		auto ctLine = CTLineCreateWithAttributedString(attrString);
-		auto stringWidth = CTLineGetTypographicBounds(ctLine, NULL, NULL, NULL);
+		for (auto str : marks)
+		{
+			auto attrString = CFAttributedStringCreate(kCFAllocatorDefault, str, NULL);
+			ctLines.push_back(CTLineCreateWithAttributedString(attrString));
+		}
+
+		auto widestLine = std::max_element(ctLines.begin(), ctLines.end(), [](auto a, auto b) {
+			return CTLineGetTypographicBounds(a, NULL, NULL, NULL) < CTLineGetTypographicBounds(b, NULL, NULL, NULL);
+		});
+
+		auto stringWidth = CTLineGetTypographicBounds(*widestLine, NULL, NULL, NULL);
 		auto rightMargin = leftMargin / 4;
 
 		auto lines = softlines(metrics, false);
@@ -793,25 +801,32 @@ namespace ng
 		auto node = _nodes.begin() + line.first;
 
 		auto x = visibleWidth - stringWidth - rightMargin;
-		auto pos = CGPointMake(x, anchorY + line.y + line.baseline);
+		auto linePos = CGPointMake(x, anchorY + line.y + line.baseline);
 		auto lineWidth = lines.size() == 1 ? width() : node->width();
 
-		if (node != _nodes.end() && lineWidth + leftMargin > pos.x - leftMargin)
+		if (node != _nodes.end() && lineWidth + leftMargin > linePos.x - leftMargin)
 			linePos.y += line.height;
 
 		CGRect backgroundRect;
-		backgroundRect.origin.x = pos.x - leftMargin;
-		backgroundRect.origin.y = pos.y - 4;
+		backgroundRect.origin.x = linePos.x - leftMargin;
+		backgroundRect.origin.y = linePos.y - 4;
 		backgroundRect.size.width = stringWidth + leftMargin + rightMargin;
 		backgroundRect.size.height = line.height;
 
+		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
 		CGContextSaveGState(context);
 			if(isFlipped)
-				CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
+				CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * linePos.y));
 
-			render::fill_rect(context, backgroundColor, backgroundRect);
-			CGContextSetTextPosition(context, pos.x, pos.y);
-			CTLineDraw(ctLine, context);
+			for (auto& ctLine : ctLines)
+			{
+				render::fill_rect(context, backgroundColor, backgroundRect);
+				CGContextSetTextPosition(context, linePos.x, linePos.y);
+				CTLineDraw(ctLine, context);
+				linePos.y -= line.height;
+				backgroundRect.origin.y -= line.height;
+			}
+
 		CGContextRestoreGState(context);
 	}
 

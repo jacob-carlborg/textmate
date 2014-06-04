@@ -1,8 +1,29 @@
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
+
 #include "meta_data.h"
 #include <oak/oak.h>
 
 namespace ng
 {
+	namespace
+	{
+		static auto recordSeparator = std::string(1, '\n');
+
+		std::string join (std::vector<std::string> const& vec)
+		{
+			return boost::algorithm::join(vec, recordSeparator);
+		}
+
+		std::vector<std::string> split (std::string str)
+		{
+			std::vector<std::string> result;
+			boost::algorithm::split(result, str, boost::algorithm::is_any_of(recordSeparator));
+			return result;
+		}
+	}
+
 	void marks_t::replace (buffer_t* buffer, size_t from, size_t to, std::string const& str)
 	{
 		for(auto& m : _marks)
@@ -18,6 +39,34 @@ namespace ng
 	void marks_t::set (size_t index, std::string const& markType, std::string const& value)
 	{
 		_marks[markType].set(index, value);
+	}
+
+	void marks_t::set (size_t index, std::string const& markType, std::vector<std::string> const& markData)
+	{
+		_marks[markType].set(index, join(markData));
+	}
+
+	void marks_t::append (size_t index, std::string const& markType, std::string const& markData)
+	{
+		auto iter = _marks.find(markType);
+
+		if (iter == _marks.end())
+		{
+			set(index, markType, markData);
+			return;
+		}
+
+		auto i = iter->second.find(index);
+
+		if (i == iter->second.end())
+		{
+			set(index, markType, markData);
+			return;
+		}
+
+		auto marks = i->second;
+		marks += recordSeparator + markData;
+		set(index, markType, marks);
 	}
 
 	void marks_t::remove (size_t index, std::string const& markType)
@@ -86,6 +135,20 @@ namespace ng
 		std::map<std::string, tree_t>::const_iterator m = _marks.find(markType);
 		if(m != _marks.end())
 			std::copy(m->second.lower_bound(from), m->second.upper_bound(to), std::inserter(res, res.end()));
+		return res;
+	}
+
+	std::map<size_t, marks_t::marks_data_t> marks_t::get_range_with_data (size_t from, size_t to, std::string const& markType) const
+	{
+		ASSERT_LE(from, to);
+		std::map<size_t, marks_t::marks_data_t> res;
+		std::map< std::string, tree_t>::const_iterator m = _marks.find(markType);
+		if(m != _marks.end())
+		{
+			foreach(it, m->second.lower_bound(from), m->second.upper_bound(to))
+				res[it->first - from] = split(it->second);
+		}
+
 		return res;
 	}
 
