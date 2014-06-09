@@ -79,4 +79,5 @@ PUBLIC @interface OakTextView : OakView
 - (IBAction)saveScratchMacro:(id)sender;
 
 - (void)performBundleItem:(bundles::item_ptr)anItem;
+- (void)rubocop;
 @end

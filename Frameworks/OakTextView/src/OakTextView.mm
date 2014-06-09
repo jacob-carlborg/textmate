@@ -40,6 +40,9 @@
 #import <editor/write.h>
 #import <io/exec.h>
 
+#include <fstream>
+#include <libgen.h>
+
 OAK_DEBUG_VAR(OakTextView_TextInput);
 OAK_DEBUG_VAR(OakTextView_Accessibility);
 OAK_DEBUG_VAR(OakTextView_Spelling);
@@ -60,6 +63,17 @@ NSString* const kUserDefaultsScrollPastEndKey      = @"scrollPastEnd";
 NSString* const OakTVInlineMarksDidChange = @"OakTVInlineMarksDidChange";
 
 struct buffer_refresh_callback_t;
+
+struct RubocopCallback : ng::callback_t
+{
+	OakTextView* textView;
+
+	virtual void did_replace (size_t from, size_t to, std::string const& str)
+	{
+		ASSERT(textView);
+		[textView rubocop];
+	}
+};
 
 @interface OakAccessibleLink : NSObject
 - (id)initWithTextView:(OakTextView*)textView range:(ng::range_t)range title:(NSString*)title URL:(NSString*)URL frame:(NSRect)frame;
@@ -311,6 +325,9 @@ typedef NS_ENUM(NSUInteger, OakFlagsState) {
 	// =================
 
 	links_ptr _links;
+
+	int rubocopCounter;
+	RubocopCallback rubocopCallback;
 }
 - (void)deselectLast:(id)sender;
 - (void)ensureSelectionIsInVisibleArea:(id)sender;
@@ -738,6 +755,8 @@ static std::string shell_quote (std::vector<std::string> paths)
 		else	[self ensureSelectionIsInVisibleArea:self];
 
 		document->buffer().add_callback(callback);
+		document->buffer().add_callback(&rubocopCallback);
+		[self rubocop];
 
 		[self resetBlinkCaretTimer];
 		[self setNeedsDisplay:YES];
@@ -773,6 +792,8 @@ static std::string shell_quote (std::vector<std::string> paths)
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(documentDidSave:) name:@"OakDocumentNotificationDidSave" object:nil];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDefaultsDidChange:) name:NSUserDefaultsDidChangeNotification object:[NSUserDefaults standardUserDefaults]];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(inlineMarksDidChange:) name:OakTVInlineMarksDidChange object:nil];
+
+		rubocopCallback.textView = self;
 	}
 	return self;
 }
@@ -3154,6 +3175,14 @@ static char const* kOakMenuItemTitle = "OakMenuItemTitle";
 	}
 }
 
+- (void) clearAllMarks
+{
+	if (document)
+	{
+		document->remove_all_marks("error");
+	}
+}
+
 - (GVLineRecord)lineRecordForPosition:(CGFloat)yPos
 {
 	if(!layout)
@@ -4074,4 +4103,150 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 - ACTION(moveSelectionDown);
 - ACTION(moveSelectionLeft);
 - ACTION(moveSelectionRight);
+
+-(NSDictionary*) rubocopEnv
+{
+	auto binPaths = @":/Users/jacob/.rvm/gems/ruby-2.1.5/bin:/Users/jacob/.rvm/rubies/ruby-2.1.5/bin";
+	NSMutableDictionary* env = [[[NSProcessInfo processInfo] environment] mutableCopy];
+	NSString* path = env[@"PATH"];
+	env[@"PATH"] = [path stringByAppendingString:binPaths];
+	env[@"GEM_HOME"] = @"/Users/jacob/.rvm/gems/ruby-2.1.5";
+
+	return env;
+}
+
+-(void) rubocop
+{
+	if (!document)
+		return;
+
+	if (document->file_type().find("source.ruby") != 0)
+		return;
+
+	auto queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+	auto time = dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC);
+
+	rubocopCounter++;
+
+	dispatch_after(time, queue, ^{
+		if (rubocopCounter > 1)
+		{
+			rubocopCounter--;
+			return;
+		}
+
+		NSString* basePath;
+		@try
+		{
+			if (document->is_on_disk())
+			{
+				auto p = strdup(document->path().c_str());
+
+				if (!p)
+					[NSException raise:@"Allocation Error" format:@"Failed to duplicate string"];
+
+				basePath = [NSString stringWithUTF8String:dirname(p)];
+				free(p);
+			}
+
+			else
+				basePath = NSTemporaryDirectory();
+
+			auto tp = [[basePath stringByAppendingPathComponent:@"rubocop.XXXXXX"] UTF8String];
+			auto tempPath = strdup(tp);
+
+			if (mkstemp(tempPath) == -1)
+				[NSException raise:@"File Error" format:@"Failed create temporary path: '%s'", tempPath];
+
+			std::ofstream tempFile;
+			tempFile.open(tempPath);
+			tempFile << document->content();
+			tempFile.close();
+
+			std::string currentPath = path::parent(document->path());
+
+			if (currentPath == NULL_STR)
+				currentPath = "/Users/jacob/development/snowmen/aft";
+
+			NSString* objcTempPath = [NSString stringWithUTF8String:tempPath];
+			free(tempPath);
+			NSTask* task = [[NSTask alloc] init];
+			[task setLaunchPath: @"/Users/jacob/.rvm/gems/ruby-2.1.5/bin/rubocop"];
+			[task setArguments: @[@"-f", @"json", objcTempPath]];
+			[task setCurrentDirectoryPath: [[NSString alloc] initWithBytes:currentPath.data() length:currentPath.size() encoding:NSUTF8StringEncoding]];
+			[task setEnvironment: [self rubocopEnv]];
+
+			NSPipe* pipe = [NSPipe pipe];
+			[task setStandardOutput: pipe];
+
+			auto file = [pipe fileHandleForReading];
+			[task launch];
+
+			auto data = [file readDataToEndOfFile];
+			[file closeFile];
+
+			dispatch_async(queue, ^{
+				NSError* error = nil;
+				auto removed = [[NSFileManager defaultManager] removeItemAtPath:objcTempPath error:&error];
+
+				if (!removed || error)
+					NSLog(@"Failed to remove temporary rubocop file: '%@' with error: %@", objcTempPath, error);
+
+			});
+
+			[self parseRubocopJSONWithData:data];
+		}
+		@finally
+		{
+			rubocopCounter--;
+		}
+	});
+}
+
+-(void) parseRubocopJSONWithData:(NSData*)data
+{
+	NSError* error = nil;
+	NSDictionary* json = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+
+	if (!json || error)
+	{
+		NSLog(@"Failed to parse JSON: %@", [error localizedDescription]);
+		return;
+	}
+
+	if ([json isKindOfClass:[NSDictionary class]])
+	{
+		NSArray* files = json[@"files"];
+
+		if ([files isKindOfClass:[NSArray class]] && [files count] > 0)
+		{
+			NSDictionary* file = [files objectAtIndex:0];
+
+			if ([file isKindOfClass:[NSDictionary class]])
+			{
+				NSArray* offenses = file[@"offenses"];
+
+				if ([offenses isKindOfClass:[NSArray class]] && [offenses count] > 0)
+				{
+					auto mainQueue = dispatch_get_main_queue();
+					dispatch_async(mainQueue, ^{ [self clearAllMarks]; });
+
+					for (NSDictionary* offense in offenses)
+					{
+						NSString* message = offense[@"message"];
+						NSNumber* line = offense[@"location"][@"line"];
+
+						if (message && line)
+						{
+							auto block = ^{ [self appendMark:message line:[line intValue]]; };
+
+							dispatch_async(mainQueue, [block copy]);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 @end
