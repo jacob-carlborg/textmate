@@ -58,4 +58,6 @@ PUBLIC extern std::string const kSettingsExcludeInFileChooserKey;
 PUBLIC extern std::string const kSettingsExcludeInFolderSearchKey;
 PUBLIC extern std::string const kSettingsExcludeKey;
 
+PUBLIC extern std::string const kSettingsRunRubocop;
+
 #endif /* end of include guard: SETTINGS_KEYS_H_7IGXFQJ6 */

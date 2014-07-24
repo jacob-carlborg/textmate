@@ -326,8 +326,13 @@ typedef NS_ENUM(NSUInteger, OakFlagsState) {
 
 	links_ptr _links;
 
+	// ===========
+	// = Rubocop =
+	// ===========
+
 	int rubocopCounter;
 	RubocopCallback rubocopCallback;
+	bool isRubocopEnabled;
 }
 - (void)deselectLast:(id)sender;
 - (void)ensureSelectionIsInVisibleArea:(id)sender;
@@ -714,6 +719,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 		layout = std::make_shared<ng::layout_t>(document->buffer(), theme, settings.get(kSettingsSoftWrapKey, false), self.scrollPastEnd, wrapColumn, document->folded());
 		if(settings.get(kSettingsShowWrapColumnKey, false))
 			layout->set_draw_wrap_column(true);
+		isRubocopEnabled = settings.get(kSettingsRunRubocop, false);
 
 		BOOL hasFocus = (self.keyState & (OakViewViewIsFirstResponderMask|OakViewWindowIsKeyMask|OakViewApplicationIsActiveMask)) == (OakViewViewIsFirstResponderMask|OakViewWindowIsKeyMask|OakViewApplicationIsActiveMask);
 		layout->set_is_key(hasFocus);
@@ -770,6 +776,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 	if(self = [super initWithFrame:aRect])
 	{
 		_fontScaleFactor = 100;
+		isRubocopEnabled = false;
 
 		settings_t const& settings = settings_for_path();
 
@@ -1699,6 +1706,7 @@ doScroll:
 		{
 			document->set_file_type(item->value_for_field(bundles::kFieldGrammarScope));
 			file::set_type(document->virtual_path(), item->value_for_field(bundles::kFieldGrammarScope));
+			[self checkRunRubocop];
 		}
 		break;
 	}
@@ -4104,6 +4112,15 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 - ACTION(moveSelectionLeft);
 - ACTION(moveSelectionRight);
 
+-(void) checkRunRubocop
+{
+	if (!document)
+		return;
+
+	auto const settings = settings_for_path(document->virtual_path(), document->file_type() + " " + to_s(self.scopeAttributes), path::parent(document->path()));
+	isRubocopEnabled = settings.get(kSettingsRunRubocop, false);
+}
+
 -(NSDictionary*) rubocopEnv
 {
 	auto binPaths = @":/Users/jacob/.rvm/gems/ruby-2.1.5/bin:/Users/jacob/.rvm/rubies/ruby-2.1.5/bin";
@@ -4117,10 +4134,7 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 
 -(void) rubocop
 {
-	if (!document)
-		return;
-
-	if (document->file_type().find("source.ruby") != 0)
+	if (!isRubocopEnabled)
 		return;
 
 	auto queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);

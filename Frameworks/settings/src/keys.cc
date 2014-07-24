@@ -54,3 +54,5 @@ std::string const kSettingsExcludeInBrowserKey                 = "excludeInBrows
 std::string const kSettingsExcludeInFileChooserKey             = "excludeInFileChooser";
 std::string const kSettingsExcludeInFolderSearchKey            = "excludeInFolderSearch";
 std::string const kSettingsExcludeKey                          = "exclude";
+
+std::string const kSettingsRunRubocop                     = "runRubocop";
