@@ -778,7 +778,7 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin) const
+	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
 	{
 		std::vector<CTLineRef> ctLines;
 		ctLines.reserve(marks.size());
@@ -804,11 +804,17 @@ namespace ng
 		auto linePos = CGPointMake(x, anchorY + line.y + line.baseline);
 		auto lineWidth = lines.size() == 1 ? width() : node->width();
 
+		auto nextLineEndX = leftMargin + nextLineWidth;
+
 		if (node != _nodes.end() && lineWidth + leftMargin > linePos.x - leftMargin)
 			linePos.y += line.height;
 
 		CGRect backgroundRect;
 		backgroundRect.origin.x = linePos.x - leftMargin;
+
+		if (nextLineWidth != CGFLOAT_MAX && nextLineEndX > backgroundRect.origin.x)
+			linePos.y -= line.height;
+
 		backgroundRect.origin.y = linePos.y - 4;
 		backgroundRect.size.width = stringWidth + leftMargin + rightMargin;
 		backgroundRect.size.height = line.height;

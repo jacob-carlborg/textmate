@@ -10,6 +10,8 @@
 #include <text/ctype.h>
 #include <oak/debug.h>
 
+#include <iterator>
+
 OAK_DEBUG_VAR(Layout);
 
 // ====================
@@ -854,6 +856,8 @@ namespace ng
 
 			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
+			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
+
 			if (!marks.empty())
 			{
 				std::vector<CFStringRef> marksData;
@@ -870,10 +874,11 @@ namespace ng
 					}
 				}
 
-				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right);
-			}
+				auto nextRow = std::next(row);
+				auto nextLineWidth = nextRow != _rows.end() ? nextRow->value.width() : CGFLOAT_MAX;
 
-			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
+				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right, nextLineWidth);
+			}
 		}
 
 		if(_draw_caret && !_drop_marker)
