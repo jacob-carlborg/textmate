@@ -43,6 +43,12 @@
 #include <fstream>
 #include <libgen.h>
 
+@interface OakRubocopException : NSException
+@end
+
+@implementation OakRubocopException
+@end
+
 OAK_DEBUG_VAR(OakTextView_TextInput);
 OAK_DEBUG_VAR(OakTextView_Accessibility);
 OAK_DEBUG_VAR(OakTextView_Spelling);
@@ -4157,7 +4163,7 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 				auto p = strdup(document->path().c_str());
 
 				if (!p)
-					[NSException raise:@"Allocation Error" format:@"Failed to duplicate string"];
+					[OakRubocopException raise:@"Allocation Error" format:@"Failed to duplicate string"];
 
 				basePath = [NSString stringWithUTF8String:dirname(p)];
 				free(p);
@@ -4170,7 +4176,7 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 			auto tempPath = strdup(tp);
 
 			if (mkstemp(tempPath) == -1)
-				[NSException raise:@"File Error" format:@"Failed create temporary path: '%s'", tempPath];
+				[OakRubocopException raise:@"File Error" format:@"Failed create temporary path: '%s'", tempPath];
 
 			std::ofstream tempFile;
 			tempFile.open(tempPath);
@@ -4209,6 +4215,10 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 			});
 
 			[self parseRubocopJSONWithData:data];
+		}
+		@catch (OakRubocopException* e)
+		{
+			NSLog(@"%@", [e reason]);
 		}
 		@finally
 		{
