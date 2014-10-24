@@ -778,15 +778,18 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
+	void paragraph_t::draw_mark_foreground (CGColorRef foregroundColor, ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
 	{
 		std::vector<CTLineRef> ctLines;
 		ctLines.reserve(marks.size());
 
 		for (auto str : marks)
 		{
-			auto attrString = CFAttributedStringCreate(kCFAllocatorDefault, str, NULL);
+			auto attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
+			CFAttributedStringReplaceString(attrString, CFRangeMake(0, 0), str);
+			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTForegroundColorAttributeName, foregroundColor);
 			ctLines.push_back(CTLineCreateWithAttributedString(attrString));
+			CFRelease(attrString);
 		}
 
 		auto widestLine = std::max_element(ctLines.begin(), ctLines.end(), [](auto a, auto b) {
@@ -829,6 +832,7 @@ namespace ng
 				render::fill_rect(context, backgroundColor, backgroundRect);
 				CGContextSetTextPosition(context, linePos.x, linePos.y);
 				CTLineDraw(ctLine, context);
+				CFRelease(ctLine);
 				linePos.y -= line.height;
 				backgroundRect.origin.y -= line.height;
 			}
