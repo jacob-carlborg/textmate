@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -138,17 +140,15 @@ namespace ng
 		return res;
 	}
 
-	std::map<size_t, marks_t::marks_data_t> marks_t::get_range_with_data (size_t from, size_t to, std::string const& markType) const
+	std::multimap<size_t, std::pair<std::string, marks_t::marks_data_t>> marks_t::get_range_with_data (size_t from, size_t to) const
 	{
 		ASSERT_LE(from, to);
-		std::map<size_t, marks_t::marks_data_t> res;
-		std::map< std::string, tree_t>::const_iterator m = _marks.find(markType);
-		if(m != _marks.end())
+		std::multimap<size_t, std::pair<std::string, marks_t::marks_data_t>> res;
+		for(auto const& m : _marks)
 		{
-			foreach(it, m->second.lower_bound(from), m->second.upper_bound(to))
-				res[it->first - from] = split(it->second);
+			foreach(it, m.second.lower_bound(from), m.second.upper_bound(to))
+				res.emplace(it->first, std::make_pair(m.first, split(it->second)));
 		}
-
 		return res;
 	}
 
