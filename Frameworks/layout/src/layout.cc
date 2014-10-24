@@ -788,6 +788,8 @@ namespace ng
 
 	void layout_t::draw (ng::context_t const& context, CGRect visibleRect, bool isFlipped, ng::ranges_t const& selection, ng::ranges_t const& highlightRanges, bool drawBackground)
 	{
+		std::string const kInlineMarkBaseIdentifier = "mark.inline.";
+
 		update_metrics(visibleRect);
 
 		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
@@ -812,12 +814,17 @@ namespace ng
 			{
 				auto from = _buffer.begin(row->offset._softlines);
 				auto to = _buffer.eol(row->offset._softlines);
-				auto marks = _buffer.get_marks(from, to, "error");
+				auto marks = _buffer.get_marks(from, to);
 
 				auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
 				if (!marks.empty())
-					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, markLineBackground, anchor.y);
+				{
+					auto lastMarkType = marks.rbegin()->second.first;
+					auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+
+					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, style.background(), anchor.y);
+				}
 
 				else
 					row->value.draw_background(_theme, *_metrics, context, isFlipped, visibleRect, background, _buffer, row->offset._length, anchor);
@@ -852,7 +859,7 @@ namespace ng
 		{
 			auto from = _buffer.begin(row->offset._softlines);
 			auto to = _buffer.eol(row->offset._softlines);
-			auto marks = _buffer.get_marks_with_data(from, to, "error");
+			auto marks = _buffer.get_marks_with_data(from, to);
 
 			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
@@ -863,11 +870,11 @@ namespace ng
 				std::vector<CFStringRef> marksData;
 
 				if (marks.size() == 1)
-					marksData.reserve(marks.begin()->second.size());
+					marksData.reserve(marks.begin()->second.second.size());
 
 				for (auto& mark : marks)
 				{
-					for (auto& m : mark.second)
+					for (auto& m : mark.second.second)
 					{
 						auto str = CFStringCreateWithCString(kCFAllocatorDefault, m.c_str(), kCFStringEncodingUTF8);
 						marksData.push_back(str);
@@ -877,7 +884,10 @@ namespace ng
 				auto nextRow = std::next(row);
 				auto nextLineWidth = nextRow != _rows.end() ? nextRow->value.width() : CGFLOAT_MAX;
 
-				row->value.draw_mark_foreground(*_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right, nextLineWidth);
+                auto lastMarkType = marks.rbegin()->second.first;
+                auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+
+				row->value.draw_mark_foreground(style.foreground(), *_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right, nextLineWidth);
 			}
 		}
 
