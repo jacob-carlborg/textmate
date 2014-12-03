@@ -3128,6 +3128,7 @@ static char const* kOakMenuItemTitle = "OakMenuItemTitle";
 	if (document)
 	{
 		document->remove_all_marks("error");
+		[self setNeedsDisplay:YES];
 	}
 }
 
@@ -4082,6 +4083,7 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	auto time = dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC);
 
 	rubocopCounter++;
+	dispatch_async(dispatch_get_main_queue(), ^{ [self clearAllMarks]; });
 
 	dispatch_after(time, queue, ^{
 		if (rubocopCounter > 1)
@@ -4181,7 +4183,6 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 				if ([offenses isKindOfClass:[NSArray class]] && [offenses count] > 0)
 				{
 					auto mainQueue = dispatch_get_main_queue();
-					dispatch_async(mainQueue, ^{ [self clearAllMarks]; });
 
 					for (NSDictionary* offense in offenses)
 					{
