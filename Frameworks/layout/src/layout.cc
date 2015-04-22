@@ -793,9 +793,6 @@ namespace ng
 		update_metrics(visibleRect);
 
 		CGContextSetTextMatrix(context, CGAffineTransformMake(1, 0, 0, 1, 0, 0));
-
-		auto markLineBackground = CGColorCreateGenericRGB(255.0 / 255.0, 207.0 / 255.0, 188.0 / 255.0, 1);
-		auto markTextBackground = CGColorCreateGenericRGB(255.0 / 255.0, 173.0 / 255.0, 154.0 / 255.0, 1);
 		CGColorRef background = _theme->background(scope::to_s(_buffer.scope(0).left));
 
 		if(drawBackground)
@@ -823,7 +820,7 @@ namespace ng
 					auto lastMarkType = marks.rbegin()->second.first;
 					auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
 
-					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, style.background(), anchor.y);
+					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, style.lineBackground(), anchor.y);
 				}
 
 				else
@@ -887,7 +884,7 @@ namespace ng
                 auto lastMarkType = marks.rbegin()->second.first;
                 auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
 
-				row->value.draw_mark_foreground(style.foreground(), *_metrics, context, isFlipped, visibleRect.size.width, marksData, markTextBackground, anchor.y, _margin.right, nextLineWidth);
+				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, visibleRect.size.width, marksData, anchor.y, _margin.right, nextLineWidth);
 			}
 		}
 

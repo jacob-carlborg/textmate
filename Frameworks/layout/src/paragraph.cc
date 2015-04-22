@@ -778,7 +778,7 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (CGColorRef foregroundColor, ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGColorRef backgroundColor, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
+	void paragraph_t::draw_mark_foreground (styles_t const& style, ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
 	{
 		std::vector<CTLineRef> ctLines;
 		ctLines.reserve(marks.size());
@@ -787,7 +787,7 @@ namespace ng
 		{
 			auto attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
 			CFAttributedStringReplaceString(attrString, CFRangeMake(0, 0), str);
-			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTForegroundColorAttributeName, foregroundColor);
+			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTForegroundColorAttributeName, style.foreground());
 			ctLines.push_back(CTLineCreateWithAttributedString(attrString));
 			CFRelease(attrString);
 		}
@@ -829,7 +829,7 @@ namespace ng
 
 			for (auto& ctLine : ctLines)
 			{
-				render::fill_rect(context, backgroundColor, backgroundRect);
+				render::fill_rect(context, style.background(), backgroundRect);
 				CGContextSetTextPosition(context, linePos.x, linePos.y);
 				CTLineDraw(ctLine, context);
 				CFRelease(ctLine);
