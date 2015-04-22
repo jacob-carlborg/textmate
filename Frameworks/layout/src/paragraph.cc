@@ -788,6 +788,7 @@ namespace ng
 			auto attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
 			CFAttributedStringReplaceString(attrString, CFRangeMake(0, 0), str);
 			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTForegroundColorAttributeName, style.foreground());
+			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, style.font());
 			ctLines.push_back(CTLineCreateWithAttributedString(attrString));
 			CFRelease(attrString);
 		}
