@@ -51,7 +51,7 @@ namespace ng
 			return NULL_STR;
 		}
 
-		static void draw_line (CGPoint pos, std::string const& text, CGColorRef color, CTFontRef font, CGContextRef context, bool isFlipped)
+		static CTLineRef string_to_line (std::string const& text, CGColorRef color, CTFontRef font)
 		{
 			ASSERT(utf8::is_valid(text.begin(), text.end()));
 			if(CFMutableAttributedStringRef str = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0))
@@ -60,18 +60,26 @@ namespace ng
 				CFAttributedStringSetAttribute(str, CFRangeMake(0, CFAttributedStringGetLength(str)), kCTFontAttributeName, font);
 				CFAttributedStringSetAttribute(str, CFRangeMake(0, CFAttributedStringGetLength(str)), kCTForegroundColorAttributeName, color);
 
-				if(CTLineRef line = CTLineCreateWithAttributedString(str))
-				{
-					CGContextSaveGState(context);
-					if(isFlipped)
-						CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
-					CGContextSetTextPosition(context, pos.x, pos.y);
-					CTLineDraw(line, context);
-					CGContextRestoreGState(context);
-
-					CFRelease(line);
-				}
+				auto line = CTLineCreateWithAttributedString(str);
 				CFRelease(str);
+				return line;
+			}
+
+			return nullptr;
+		}
+
+		static void draw_line (CGPoint pos, std::string const& text, CGColorRef color, CTFontRef font, CGContextRef context, bool isFlipped)
+		{
+			if(CTLineRef line = string_to_line(text, color, font))
+			{
+				CGContextSaveGState(context);
+				if(isFlipped)
+					CGContextConcatCTM(context, CGAffineTransformMake(1, 0, 0, -1, 0, 2 * pos.y));
+				CGContextSetTextPosition(context, pos.x, pos.y);
+				CTLineDraw(line, context);
+				CGContextRestoreGState(context);
+
+				CFRelease(line);
 			}
 		}
 	}
@@ -778,19 +786,20 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_foreground (styles_t const& style, ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<CFStringRef> const& marks, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
+	void paragraph_t::draw_mark_foreground (styles_t const& style, ct::metrics_t const& metrics, ng::context_t const& context, bool isFlipped, CGFloat visibleWidth, std::vector<std::pair<std::string, std::vector<std::string>>> const& marks, CGFloat anchorY, CGFloat leftMargin, CGFloat nextLineWidth) const
 	{
 		std::vector<CTLineRef> ctLines;
-		ctLines.reserve(marks.size());
 
-		for (auto str : marks)
+		for (auto const& pair : marks)
 		{
-			auto attrString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
-			CFAttributedStringReplaceString(attrString, CFRangeMake(0, 0), str);
-			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTForegroundColorAttributeName, style.foreground());
-			CFAttributedStringSetAttribute(attrString, CFRangeMake(0, CFAttributedStringGetLength(attrString)), kCTFontAttributeName, style.font());
-			ctLines.push_back(CTLineCreateWithAttributedString(attrString));
-			CFRelease(attrString);
+			ctLines.reserve(ctLines.capacity() + pair.second.size());
+
+			for (auto const& str : pair.second)
+			{
+				auto line = string_to_line(str, style.foreground(), style.font());
+				if (line)
+					ctLines.push_back(line);
+			}
 		}
 
 		auto widestLine = std::max_element(ctLines.begin(), ctLines.end(), [](auto a, auto b) {
