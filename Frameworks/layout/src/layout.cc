@@ -864,27 +864,13 @@ namespace ng
 
 			if (!marks.empty())
 			{
-				std::vector<CFStringRef> marksData;
-
-				if (marks.size() == 1)
-					marksData.reserve(marks.begin()->second.second.size());
-
-				for (auto& mark : marks)
-				{
-					for (auto& m : mark.second.second)
-					{
-						auto str = CFStringCreateWithCString(kCFAllocatorDefault, m.c_str(), kCFStringEncodingUTF8);
-						marksData.push_back(str);
-					}
-				}
-
 				auto nextRow = std::next(row);
 				auto nextLineWidth = nextRow != _rows.end() ? nextRow->value.width() : CGFLOAT_MAX;
 
-                auto lastMarkType = marks.rbegin()->second.first;
-                auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+				auto lastMarkType = marks.rbegin()->first;
+				auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
 
-				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, visibleRect.size.width, marksData, anchor.y, _margin.right, nextLineWidth);
+				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, visibleRect.size.width, marks, anchor.y, _margin.right, nextLineWidth);
 			}
 		}
 
