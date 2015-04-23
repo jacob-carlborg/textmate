@@ -11,6 +11,8 @@ PUBLIC extern int32_t const NSWrapColumnAskUser;
 PUBLIC extern NSString* const kUserDefaultsWrapColumnPresetsKey;
 PUBLIC extern NSString* const kUserDefaultsDisableAntiAliasKey;
 
+extern NSString* const OakTVInlineMarksDidChange;
+
 namespace bundles { struct item_t; typedef std::shared_ptr<item_t> item_ptr; }
 
 enum folding_state_t { kFoldingNone, kFoldingTop, kFoldingCollapsed, kFoldingBottom };
