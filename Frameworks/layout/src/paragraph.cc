@@ -733,14 +733,14 @@ namespace ng
 		}
 	}
 
-	void paragraph_t::draw_mark_background (ct::metrics_t const& metrics, ng::context_t const& context, CGFloat visibleWidth, CGColorRef backgroundColor, CGFloat anchorY) const
+	void paragraph_t::draw_mark_background (ct::metrics_t const& metrics, ng::context_t const& context, CGRect visibleRect, CGColorRef backgroundColor, CGFloat anchorY) const
 	{
 		for (auto line : softlines(metrics))
 		{
 			CGRect rect;
-			rect.origin.x = 0;
+			rect.origin.x = visibleRect.origin.x;
 			rect.origin.y = anchorY + line.y;
-			rect.size.width = visibleWidth;
+			rect.size.width = visibleRect.size.width;
 			rect.size.height = line.height;
 
 			render::fill_rect(context, backgroundColor, rect);
@@ -819,14 +819,11 @@ namespace ng
 
 		auto nextLineEndX = leftMargin + nextLineWidth;
 
-		if (node != _nodes.end() && lineWidth + leftMargin > markPos.x - leftMargin)
-			markPos.y += line.height;
-
 		CGRect markBackgroundRect;
 		markBackgroundRect.origin.x = markPos.x - leftMargin;
 
-		if (nextLineWidth != CGFLOAT_MAX && nextLineEndX > markBackgroundRect.origin.x)
-			markPos.y -= line.height;
+		if (lineWidth + leftMargin > markPos.x - leftMargin && markBackgroundRect.origin.x > nextLineEndX)
+			markPos.y += line.height;
 
 		markBackgroundRect.origin.y = markPos.y - 4;
 		markBackgroundRect.size.width = markWidth + leftMargin + rightMargin;
