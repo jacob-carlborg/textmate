@@ -786,7 +786,7 @@ namespace ng
 
 	}
 
-	void layout_t::draw (ng::context_t const& context, CGRect visibleRect, bool isFlipped, ng::ranges_t const& selection, ng::ranges_t const& highlightRanges, bool drawBackground)
+	void layout_t::draw (ng::context_t const& context, CGRect visibleRect, CGFloat fullWidth, bool isFlipped, ng::ranges_t const& selection, ng::ranges_t const& highlightRanges, bool drawBackground)
 	{
 		std::string const kInlineMarkBaseIdentifier = "mark.inline.";
 
@@ -820,7 +820,7 @@ namespace ng
 					auto lastMarkType = marks.rbegin()->second.first;
 					auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
 
-					row->value.draw_mark_background(*_metrics, context, visibleRect.size.width, style.lineBackground(), anchor.y);
+					row->value.draw_mark_background(*_metrics, context, visibleRect, style.lineBackground(), anchor.y);
 				}
 
 				else
@@ -870,7 +870,7 @@ namespace ng
 				auto lastMarkType = marks.rbegin()->first;
 				auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
 
-				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, visibleRect.size.width, marks, anchor.y, _margin.right, nextLineWidth);
+				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, fullWidth, marks, anchor.y, _margin.right, nextLineWidth);
 			}
 		}
 

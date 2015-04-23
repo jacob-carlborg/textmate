@@ -584,7 +584,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 	CGContextTranslateCTM(context, -NSMinX(srcRect), -NSMinY(srcRect));
 
 	NSRectClip(srcRect);
-	layout->draw(context, srcRect, [self isFlipped], ng::ranges_t(), ng::ranges_t(), false);
+	layout->draw(context, srcRect, self.superview.frame.size.width, [self isFlipped], ng::ranges_t(), ng::ranges_t(), false);
 
 	[image unlockFocus];
 
@@ -980,7 +980,7 @@ doScroll:
 		return NULL;
 	};
 
-	layout->draw(ng::context_t(context, _showInvisibles ? invisiblesMap : NULL_STR, [spellingDotImage CGImageForProposedRect:NULL context:[NSGraphicsContext currentContext] hints:nil], foldingDotsFactory), aRect, [self isFlipped], merge(editor->ranges(), [self markedRanges]), liveSearchRanges);
+	layout->draw(ng::context_t(context, _showInvisibles ? invisiblesMap : NULL_STR, [spellingDotImage CGImageForProposedRect:NULL context:[NSGraphicsContext currentContext] hints:nil], foldingDotsFactory), aRect, self.superview.frame.size.width, [self isFlipped], merge(editor->ranges(), [self markedRanges]), liveSearchRanges);
 }
 
 // =====================
