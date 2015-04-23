@@ -140,14 +140,14 @@ namespace ng
 		return res;
 	}
 
-	std::multimap<size_t, std::pair<std::string, marks_t::marks_data_t>> marks_t::get_range_with_data (size_t from, size_t to) const
+	std::vector<std::pair<std::string, marks_t::marks_data_t>> marks_t::get_range_with_data (size_t from, size_t to) const
 	{
 		ASSERT_LE(from, to);
-		std::multimap<size_t, std::pair<std::string, marks_t::marks_data_t>> res;
+		std::vector<std::pair<std::string, marks_t::marks_data_t>> res;
 		for(auto const& m : _marks)
 		{
 			foreach(it, m.second.lower_bound(from), m.second.upper_bound(to))
-				res.emplace(it->first, std::make_pair(m.first, split(it->second)));
+				res.push_back(std::make_pair(m.first, split(it->second)));
 		}
 		return res;
 	}

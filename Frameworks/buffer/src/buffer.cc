@@ -333,7 +333,7 @@ namespace ng
 	std::string buffer_t::get_mark (size_t index, std::string const& markType) const                              { return _marks->get(index, markType); }
 	std::multimap<size_t, std::pair<std::string, std::string>> buffer_t::get_marks (size_t from, size_t to) const { return _marks->get_range(from, to); }
 	std::map<size_t, std::string> buffer_t::get_marks (size_t from, size_t to, std::string const& markType) const { return _marks->get_range(from, to, markType); }
-    std::multimap<size_t, std::pair<std::string, std::vector<std::string>>> buffer_t::get_marks_with_data (size_t from, size_t to) const { return _marks->get_range_with_data(from, to); }
+    std::vector<std::pair<std::string, std::vector<std::string>>> buffer_t::get_marks_with_data (size_t from, size_t to) const { return _marks->get_range_with_data(from, to); }
 	std::pair<size_t, std::string> buffer_t::next_mark (size_t index, std::string const& markType) const          { return _marks->next(index, markType); }
 	std::pair<size_t, std::string> buffer_t::prev_mark (size_t index, std::string const& markType) const          { return _marks->prev(index, markType); }
 
