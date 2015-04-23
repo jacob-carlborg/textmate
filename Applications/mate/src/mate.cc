@@ -147,6 +147,7 @@ static void usage (FILE* io)
 		"                               <identifier>.\n"
 		" -e, --[no-]escapes            Set this to preserve ANSI escapes from stdin.\n"
 		" -s, --set-mark <mark>:<value> Set a mark containing <value> (requires --line).\n"
+		"     --append-mark <mark>:<value> Append a mark containing <value> (requires --line).\n"
 		" -c, --clear-mark <mark>       Clear a mark (clears all marks without --line).\n"
 		" -h, --help                    Show this information.\n"
 		" -v, --version                 Print version information.\n"
@@ -280,6 +281,7 @@ int main (int argc, char const* argv[])
 		{ "recent",           no_argument,         0,      'r'   },
 		{ "no-recent",        no_argument,         0,      'R'   },
 		{ "set-mark",         required_argument,   0,      's'   },
+		{ "append-mark",      required_argument,   0,      0     },
 		{ "type",             required_argument,   0,      't'   },
 		{ "uuid",             required_argument,   0,      'u'   },
 		{ "version",          no_argument,         0,      'v'   },
