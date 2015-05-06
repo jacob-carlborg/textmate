@@ -92,6 +92,7 @@ namespace document
 		// ===================================================================
 
 		void add_mark (text::pos_t const& pos, std::string const& mark, std::string const& value = std::string());
+		void append_mark (text::pos_t const& pos, std::string const& mark, std::string const& value = std::string());
 		void remove_mark (text::pos_t const& pos, std::string const& mark);
 		void remove_all_marks (std::string const& typeToClear = NULL_STR);
 

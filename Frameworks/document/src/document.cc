@@ -1367,6 +1367,13 @@ namespace document
 		broadcast(callback_t::did_change_marks);
 	}
 
+	void document_t::append_mark (text::pos_t const& pos, std::string const& mark, std::string const& value)
+	{
+		if(_buffer)
+			_buffer->append_mark(_buffer->convert(pos), mark, value);
+		broadcast(callback_t::did_change_marks);
+	}
+
 	void document_t::remove_mark (text::pos_t const& pos, std::string const& mark)
 	{
 		if(pos == text::pos_t::undefined)

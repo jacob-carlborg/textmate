@@ -138,18 +138,19 @@ static void usage (FILE* io)
 		"       %1$s -c<mark> [-l<line>] [-u<identifier> | file ...]\n"
 		"\n"
 		"Options:\n"
-		" -w, --[no-]wait               Wait for file to be closed by TextMate.\n"
-		" -l, --line <selection>        Setup <selection> after loading file.\n"
-		" -t, --type <filetype>         Treat file as having <filetype>.\n"
-		" -m, --name <name>             The display name shown in TextMate.\n"
-		" -r, --[no-]recent             Add file to Open Recent menu.\n"
-		" -u, --uuid <identifier>       Reference already open document with\n"
-		"                               <identifier>.\n"
-		" -e, --[no-]escapes            Set this to preserve ANSI escapes from stdin.\n"
-		" -s, --set-mark <mark>:<value> Set a mark containing <value> (requires --line).\n"
-		" -c, --clear-mark <mark>       Clear a mark (clears all marks without --line).\n"
-		" -h, --help                    Show this information.\n"
-		" -v, --version                 Print version information.\n"
+		" -w, --[no-]wait                  Wait for file to be closed by TextMate.\n"
+		" -l, --line <selection>           Setup <selection> after loading file.\n"
+		" -t, --type <filetype>            Treat file as having <filetype>.\n"
+		" -m, --name <name>                The display name shown in TextMate.\n"
+		" -r, --[no-]recent                Add file to Open Recent menu.\n"
+		" -u, --uuid <identifier>          Reference already open document with\n"
+		"                                  <identifier>.\n"
+		" -e, --[no-]escapes               Set this to preserve ANSI escapes from stdin.\n"
+		" -s, --set-mark <mark>:<value>    Set a mark containing <value> (requires --line).\n"
+		"     --append-mark <mark>:<value> Append a mark containing <value> (requires --line).\n"
+		" -c, --clear-mark <mark>          Clear a mark (clears all marks without --line).\n"
+		" -h, --help                       Show this information.\n"
+		" -v, --version                    Print version information.\n"
 		"\n"
 		"Files opened via %1$s are added to the recent menu unless\n"
 		"the file starts with a period, --wait or --no-recent is\n"
@@ -261,6 +262,11 @@ _InputIter remove_ansi_escapes (_InputIter it, _InputIter last, escape_state_t* 
 	return dst;
 }
 
+enum OptionValues
+{
+	OPT_VAL_APPEND_MARK = 1
+};
+
 int main (int argc, char const* argv[])
 {
 	extern char* optarg;
@@ -280,6 +286,7 @@ int main (int argc, char const* argv[])
 		{ "recent",           no_argument,         0,      'r'   },
 		{ "no-recent",        no_argument,         0,      'R'   },
 		{ "set-mark",         required_argument,   0,      's'   },
+		{ "append-mark",      required_argument,   0,      OPT_VAL_APPEND_MARK     },
 		{ "type",             required_argument,   0,      't'   },
 		{ "uuid",             required_argument,   0,      'u'   },
 		{ "version",          no_argument,         0,      'v'   },
@@ -289,7 +296,7 @@ int main (int argc, char const* argv[])
 	};
 
 	osx::authorization_t auth;
-	std::vector<std::string> files, lines, types, names, projects, setMarks, clearMarks;
+	std::vector<std::string> files, lines, types, names, projects, setMarks, appendMarks, clearMarks;
 	oak::uuid_t uuid;
 
 	boolean changeDir   = boolean::kDisable;
@@ -333,6 +340,7 @@ int main (int argc, char const* argv[])
 				case 'r': addToRecent = boolean::kEnable;  break;
 				case 'R': addToRecent = boolean::kDisable; break;
 				case 's': setMarks.push_back(optarg); break;
+				case OPT_VAL_APPEND_MARK: appendMarks.push_back(optarg); break;
 				case 't': append(optarg, types);    break;
 				case 'u': uuid = optarg;            break;
 				case 'v': version();                return EX_OK;
@@ -378,10 +386,10 @@ int main (int argc, char const* argv[])
 	std::string defaultProject = projects.empty() ? (getenv("TM_PROJECT_UUID") ?: "") : projects.back();
 
 	bool stdinIsAPipe = isatty(STDIN_FILENO) == 0;
-	if(files.empty() && !uuid && (!setMarks.empty() || (!clearMarks.empty() && !lines.empty())) && getenv("TM_DOCUMENT_UUID"))
+	if(files.empty() && !uuid && (!setMarks.empty() || !appendMarks.empty() || (!clearMarks.empty() && !lines.empty())) && getenv("TM_DOCUMENT_UUID"))
 		uuid = getenv("TM_DOCUMENT_UUID");
 
-	if(files.empty() && (uuid || (setMarks.empty() && clearMarks.empty())))
+	if(files.empty() && (uuid || (setMarks.empty() && appendMarks.empty() && clearMarks.empty())))
 	{
 		if(uuid)
 			files.push_back(kUUIDPrefix + to_s(uuid));
@@ -410,14 +418,14 @@ int main (int argc, char const* argv[])
 
 	if(!clearMarks.empty())
 	{
-		size_t n = setMarks.empty() ? std::max(clearMarks.size(), std::max(files.size(), lines.size())) : clearMarks.size();
+		size_t n = setMarks.empty() && appendMarks.empty() ? std::max(clearMarks.size(), std::max(files.size(), lines.size())) : clearMarks.size();
 		for(size_t i = 0; i < n; ++i)
 		{
 			write(fd, "clear-mark\r\n", 12);
 
 			write_key_pair(fd, "mark", clearMarks[i % clearMarks.size()]);
 
-			if(!lines.empty() && setMarks.empty())
+			if(!lines.empty() && setMarks.empty() && appendMarks.empty())
 				write_key_pair(fd, "line", lines[i % lines.size()]);
 
 			if(!files.empty())
@@ -449,7 +457,25 @@ int main (int argc, char const* argv[])
 		}
 	}
 
-	if(clearMarks.empty() && setMarks.empty())
+	if(!appendMarks.empty() && !files.empty() && !lines.empty())
+	{
+		size_t n = std::max(appendMarks.size(), std::max(files.size(), lines.size()));
+		for(size_t i = 0; i < n; ++i)
+		{
+			write(fd, "append-mark\r\n", 13);
+
+			write_key_pair(fd, "mark", appendMarks[i % appendMarks.size()]);
+			write_key_pair(fd, "line", lines[i % lines.size()]);
+
+			if(files[i % files.size()].find(kUUIDPrefix) == 0)
+					write_key_pair(fd, "uuid", files[i % files.size()].substr(kUUIDPrefix.size()));
+			else	write_key_pair(fd, "path", files[i % files.size()]);
+
+			write(fd, "\r\n", 2);
+		}
+	}
+
+	if(clearMarks.empty() && setMarks.empty() && appendMarks.empty())
 	{
 		for(size_t i = 0; i < files.size(); ++i)
 		{

@@ -619,7 +619,7 @@ struct socket_observer_t
 	{
 		for(auto& record : records)
 		{
-			if(record.command != "clear-mark" && record.command != "set-mark")
+			if(record.command != "clear-mark" && record.command != "set-mark" && record.command != "append-mark")
 				continue;
 
 			auto& args = record.arguments;
@@ -645,6 +645,13 @@ struct socket_observer_t
 				if(doc)
 						doc->add_mark(line, n == std::string::npos ? mark : mark.substr(0, n), n == std::string::npos ? std::string() : mark.substr(n+1));
 				else	fprintf(stderr, "set-mark: no document\n");
+			}
+			else if(record.command == "append-mark")
+			{
+				std::string::size_type n = mark.find(':');
+				if(doc)
+					doc->append_mark(line, n == std::string::npos ? mark : mark.substr(0, n), n == std::string::npos ? std::string() : mark.substr(n+1));
+				else	fprintf(stderr, "append-mark: no document\n");
 			}
 		}
 	}
