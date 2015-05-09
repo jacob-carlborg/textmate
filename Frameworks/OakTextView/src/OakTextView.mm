@@ -17,6 +17,7 @@
 #import <OakFoundation/OakFindProtocol.h>
 #import <OakFoundation/OakTimer.h>
 #import <OakSystem/application.h>
+#import <Preferences/Keys.h>
 #import <crash/info.h>
 #import <buffer/indexed_map.h>
 #import <BundleMenu/BundleMenu.h>
@@ -586,7 +587,7 @@ static std::string shell_quote (std::vector<std::string> paths)
 	CGContextTranslateCTM(context, -NSMinX(srcRect), -NSMinY(srcRect));
 
 	NSRectClip(srcRect);
-	layout->draw(context, srcRect, self.superview.frame.size.width, [self isFlipped], ng::ranges_t(), ng::ranges_t(), false);
+	layout->draw(context, srcRect, self.superview.frame.size.width, [self isFlipped], ng::ranges_t(), self.showInlineMarks, ng::ranges_t(), false);
 
 	[image unlockFocus];
 
@@ -749,11 +750,12 @@ static std::string shell_quote (std::vector<std::string> paths)
 		fontSize       = settings.get(kSettingsFontSizeKey, 11.0);
 		theme          = theme->copy_with_font_name_and_size(fontName, fontSize * _fontScaleFactor / 100);
 
-		_showInvisibles = settings.get(kSettingsShowInvisiblesKey, false);
-		_scrollPastEnd  = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsScrollPastEndKey];
-		_antiAlias      = ![[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsDisableAntiAliasKey];
-		_fontSmoothing  = (OTVFontSmoothing)[[NSUserDefaults standardUserDefaults] integerForKey:kUserDefaultsFontSmoothingKey];
-
+		_showInvisibles  = settings.get(kSettingsShowInvisiblesKey, false);
+		_scrollPastEnd   = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsScrollPastEndKey];
+		_antiAlias       = ![[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsDisableAntiAliasKey];
+		_fontSmoothing   = (OTVFontSmoothing)[[NSUserDefaults standardUserDefaults] integerForKey:kUserDefaultsFontSmoothingKey];
+		_showInlineMarks = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsShowInlineMarksKey];
+		NSLog(@"showInlineMarks=%d\n", self.showInlineMarks);
 		spellingDotImage = [NSImage imageNamed:@"SpellingDot" inSameBundleAsClass:[self class]];
 		foldingDotsImage = [NSImage imageNamed:@"FoldingDots" inSameBundleAsClass:[self class]];
 
@@ -988,7 +990,7 @@ doScroll:
 		return NULL;
 	};
 
-	layout->draw(ng::context_t(context, _showInvisibles ? invisiblesMap : NULL_STR, [spellingDotImage CGImageForProposedRect:NULL context:[NSGraphicsContext currentContext] hints:nil], foldingDotsFactory), aRect, self.superview.frame.size.width, [self isFlipped], merge(editor->ranges(), [self markedRanges]), liveSearchRanges);
+	layout->draw(ng::context_t(context, _showInvisibles ? invisiblesMap : NULL_STR, [spellingDotImage CGImageForProposedRect:NULL context:[NSGraphicsContext currentContext] hints:nil], foldingDotsFactory), aRect, self.superview.frame.size.width, [self isFlipped], merge(editor->ranges(), [self markedRanges]), self.showInlineMarks, liveSearchRanges);
 }
 
 // =====================
@@ -3508,9 +3510,10 @@ static char const* kOakMenuItemTitle = "OakMenuItemTitle";
 
 - (void)userDefaultsDidChange:(id)sender
 {
-	self.antiAlias     = ![[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsDisableAntiAliasKey];
-	self.fontSmoothing = (OTVFontSmoothing)[[NSUserDefaults standardUserDefaults] integerForKey:kUserDefaultsFontSmoothingKey];
-	self.scrollPastEnd = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsScrollPastEndKey];
+	self.antiAlias       = ![[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsDisableAntiAliasKey];
+	self.fontSmoothing   = (OTVFontSmoothing)[[NSUserDefaults standardUserDefaults] integerForKey:kUserDefaultsFontSmoothingKey];
+	self.scrollPastEnd   = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsScrollPastEndKey];
+	self.showInlineMarks = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultsShowInlineMarksKey];
 }
 
 // =================

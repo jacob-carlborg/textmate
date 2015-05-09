@@ -786,7 +786,7 @@ namespace ng
 
 	}
 
-	void layout_t::draw (ng::context_t const& context, CGRect visibleRect, CGFloat fullWidth, bool isFlipped, ng::ranges_t const& selection, ng::ranges_t const& highlightRanges, bool drawBackground)
+	void layout_t::draw (ng::context_t const& context, CGRect visibleRect, CGFloat fullWidth, bool isFlipped, ng::ranges_t const& selection, bool drawInlineMarks, ng::ranges_t const& highlightRanges, bool drawBackground)
 	{
 		std::string const kInlineMarkBaseIdentifier = "mark.inline.";
 
@@ -809,18 +809,24 @@ namespace ng
 		{
 			foreach(row, firstY, _rows.lower_bound(yMax, &row_y_comp))
 			{
-				auto from = _buffer.begin(row->offset._softlines);
-				auto to = _buffer.eol(row->offset._softlines);
-				auto marks = _buffer.get_marks(from, to);
-
 				auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
 
-				if (!marks.empty())
+				if (drawInlineMarks)
 				{
-					auto lastMarkType = marks.rbegin()->second.first;
-					auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+					auto from = _buffer.begin(row->offset._softlines);
+					auto to = _buffer.eol(row->offset._softlines);
+					auto marks = _buffer.get_marks(from, to);
 
-					row->value.draw_mark_background(*_metrics, context, visibleRect, style.lineBackground(), anchor.y);
+					if (!marks.empty())
+					{
+						auto lastMarkType = marks.rbegin()->second.first;
+						auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+
+						row->value.draw_mark_background(*_metrics, context, visibleRect, style.lineBackground(), anchor.y);
+					}
+
+					else
+						row->value.draw_background(_theme, *_metrics, context, isFlipped, visibleRect, background, _buffer, row->offset._length, anchor);
 				}
 
 				else
@@ -854,23 +860,25 @@ namespace ng
 
 		foreach(row, firstY, _rows.lower_bound(yMax, &row_y_comp))
 		{
-			auto from = _buffer.begin(row->offset._softlines);
-			auto to = _buffer.eol(row->offset._softlines);
-			auto marks = _buffer.get_marks_with_data(from, to);
-
 			auto anchor = CGPointMake(_margin.left, _margin.top + row->offset._height);
-
 			row->value.draw_foreground(_theme, *_metrics, context, isFlipped, visibleRect, _buffer, row->offset._length, selection, anchor);
 
-			if (!marks.empty())
+			if (drawInlineMarks)
 			{
-				auto nextRow = std::next(row);
-				auto nextLineWidth = nextRow != _rows.end() ? nextRow->value.width() : CGFLOAT_MAX;
+				auto from = _buffer.begin(row->offset._softlines);
+				auto to = _buffer.eol(row->offset._softlines);
+				auto marks = _buffer.get_marks_with_data(from, to);
 
-				auto lastMarkType = marks.rbegin()->first;
-				auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+				if (!marks.empty())
+				{
+					auto nextRow = std::next(row);
+					auto nextLineWidth = nextRow != _rows.end() ? nextRow->value.width() : CGFLOAT_MAX;
 
-				row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, fullWidth, marks, anchor.y, _margin.right, nextLineWidth);
+					auto lastMarkType = marks.rbegin()->first;
+					auto style = _theme->styles_for_scope(kInlineMarkBaseIdentifier + lastMarkType);
+
+					row->value.draw_mark_foreground(style, *_metrics, context, isFlipped, fullWidth, marks, anchor.y, _margin.right, nextLineWidth);
+				}
 			}
 		}
 
