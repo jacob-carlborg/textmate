@@ -4187,15 +4187,20 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 
 			std::string currentPath = path::parent(document->path());
 
-			if (currentPath == NULL_STR)
+			if (currentPath == NULL_STR || !path::exists(currentPath))
 				currentPath = "/Users/jacob/development/snowmen/aft";
+
+			NSString* workingDirecotry = [[NSString alloc] initWithBytes:currentPath.data() length:currentPath.size() encoding:NSUTF8StringEncoding];
+
+			if (!path::exists(currentPath))
+				[OakRubocopException raise:@"Working directory missing" format:@"The workong directory '%@' is missing", workingDirecotry];
 
 			NSString* objcTempPath = [NSString stringWithUTF8String:tempPath];
 			free(tempPath);
 			NSTask* task = [[NSTask alloc] init];
 			[task setLaunchPath: @"/Users/jacob/.rvm/gems/ruby-2.1.5/bin/rubocop"];
 			[task setArguments: @[@"-f", @"json", objcTempPath]];
-			[task setCurrentDirectoryPath: [[NSString alloc] initWithBytes:currentPath.data() length:currentPath.size() encoding:NSUTF8StringEncoding]];
+			[task setCurrentDirectoryPath: workingDirecotry];
 			[task setEnvironment: [self rubocopEnv]];
 
 			NSPipe* pipe = [NSPipe pipe];
