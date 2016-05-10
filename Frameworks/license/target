@@ -4,4 +4,5 @@ LINK        += text cf
 CXX_FLAGS   += -I"$libressl_prefix/include"
 LN_FLAGS    += -Wl,-U,__Z15revoked_serialsv
 LN_FLAGS    += "$libressl_prefix"/lib/libcrypto.a
+LN_FLAGS    += "$libressl_prefix"/lib/libz.a
 FRAMEWORKS   = Security

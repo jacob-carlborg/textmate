@@ -3,6 +3,7 @@
 #import "OakChoiceMenu.h"
 #import "OakDocumentView.h" // addAuxiliaryView:atEdge: signature
 #import "LiveSearchView.h"
+#import "OakInlineMarkView.h"
 #import "OTVHUD.h"
 #import <OakAppKit/OakAppKit.h>
 #import <OakAppKit/NSEvent Additions.h>
@@ -259,6 +260,8 @@ typedef NS_ENUM(NSUInteger, OakFlagsState) {
 
 	NSImage* spellingDotImage;
 	NSImage* foldingDotsImage;
+
+	OakInlineMarkView* markView;
 
 	// =================
 	// = Mouse Support =
@@ -770,6 +773,9 @@ static std::string shell_quote (std::vector<std::string> paths)
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(documentWillSave:) name:@"OakDocumentNotificationWillSave" object:nil];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(documentDidSave:) name:@"OakDocumentNotificationDidSave" object:nil];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDefaultsDidChange:) name:NSUserDefaultsDidChangeNotification object:[NSUserDefaults standardUserDefaults]];
+
+		markView = [[OakInlineMarkView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
+		[self addSubview:markView];
 	}
 	return self;
 }
