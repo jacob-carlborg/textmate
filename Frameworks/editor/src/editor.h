@@ -192,6 +192,7 @@ namespace ng
 		std::string placeholder_content (ng::range_t* placeholderSelection = NULL) const;
 		void set_placeholder_content (std::string const& str, size_t selectFrom);
 
+		buffer_t& buffer () const { return _buffer; }
 		ranges_t ranges () const                                              { return _selections; }
 		void set_selections (ranges_t const& r)                               { _selections = r; }
 		bool has_selection () const                                           { return not_empty(_buffer, _selections); }

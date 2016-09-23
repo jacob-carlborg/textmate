@@ -85,6 +85,7 @@ static int32_t const NSWrapColumnWindowWidth = 0;
 		_buffer_callback = new callback_t(self);
 		self.buffer.add_callback(_buffer_callback);
 	}
+
 	return self;
 }
 

@@ -35,6 +35,9 @@
 #import <ns/ns.h>
 #import <kvdb/kvdb.h>
 
+#import <document/OakDocumentEditor.h>
+#import <editor/editor.h>
+
 static NSString* const kUserDefaultsAlwaysFindInDocument = @"alwaysFindInDocument";
 static NSString* const kUserDefaultsDisableFolderStateRestore = @"disableFolderStateRestore";
 static NSString* const kUserDefaultsHideStatusBarKey = @"hideStatusBar";
@@ -384,6 +387,34 @@ namespace
 		[self openAndSelectDocument:defaultDocument];
 	}
 	[self.window makeKeyAndOrderFront:sender];
+
+
+	auto const rect = [self rectForCurrentWord];
+
+	if (!NSIsEmptyRect(rect))
+	{
+		NSView* oakTextView;
+		if(id docController = [NSApp targetForAction:@selector(textView)])
+			oakTextView = [docController textView];
+
+		auto tempView = [[NSView alloc] initWithFrame:rect];
+		[oakTextView addSubview: tempView];
+
+		auto tv = [[NSTextView alloc] initWithFrame:NSMakeRect(10, 180, 100, 100)];
+		tv.string = @"Foobar";
+		tv.font = [NSFont userFontOfSize:40.0];
+
+		auto controller = [[NSViewController alloc] init];
+		controller.view = tv;
+
+		auto popover = [[NSPopover alloc] init];
+		popover.contentSize = NSMakeSize(200, 200);
+		popover.contentViewController = controller;
+		popover.animates = YES;
+		popover.behavior = NSPopoverBehaviorTransient;
+
+		[popover showRelativeToRect:tempView.bounds ofView:tempView preferredEdge:NSMinYEdge];
+	}
 }
 
 - (void)makeTextViewFirstResponder:(id)sender { [self.window makeFirstResponder:self.textView]; }
@@ -2279,6 +2310,34 @@ namespace
 - (NSPoint)positionForWindowUnderCaret
 {
 	return [self.textView positionForWindowUnderCaret];
+}
+
+- (NSRect)rectForCurrentWord
+{
+	auto documentEditor = [self.textView.document.documentEditors objectAtIndex:0];
+	auto const& editor = [documentEditor editor];
+	auto const ranges = editor.ranges();
+
+	if(ranges.size() != 1)
+		return NSZeroRect;
+
+	auto const range = ranges.last();
+
+	if(range.empty())
+	{
+		auto wordRange = ng::word_at(editor.buffer(), range);
+
+		if(!wordRange.empty())
+		{
+			auto first = wordRange.min().index;
+			auto last = wordRange.max().index;
+			auto currentWord = editor.buffer().substr(first, last);
+
+			return [documentEditor layout].rect_for_range(first, last);
+		}
+	}
+
+	return NSZeroRect;
 }
 
 - (void)performBundleItem:(bundles::item_ptr const&)anItem
