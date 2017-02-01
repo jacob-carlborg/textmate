@@ -2098,18 +2098,38 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	return NO;
 }
 
+bool handleDotCompletion(NSEvent* event, OakTextView* textView)
+{
+	auto const& items = bundles::query(bundles::kFieldSemanticClass, "callback.dot-completion", [textView scopeContext]);
+
+	if(!items.empty() && to_s(event) == ".")
+	{
+		if (auto item = OakShowMenuForBundleItems(items, [textView positionForWindowUnderCaret]))
+		{
+			[textView.inputContext handleEvent:event];
+			[textView performBundleItem:item];
+			return true;
+		}
+	}
+
+	return false;
+}
+
 - (void)oldKeyDown:(NSEvent*)anEvent
 {
-	std::vector<bundles::item_ptr> const& items = bundles::query(bundles::kFieldKeyEquivalent, to_s(anEvent), [self scopeContext]);
-	if(bundles::item_ptr item = OakShowMenuForBundleItems(items, [self positionForWindowUnderCaret]))
+	if(!handleDotCompletion(anEvent, self))
 	{
-		[self performBundleItem:item];
-	}
-	else if(items.empty())
-	{
-		if(LocalBindings.find(to_s(anEvent)) != LocalBindings.end())
-				[self handleKeyBindingAction:KeyBindings[to_s(anEvent)]];
-		else	[self.inputContext handleEvent:anEvent];
+		std::vector<bundles::item_ptr> const& items = bundles::query(bundles::kFieldKeyEquivalent, to_s(anEvent), [self scopeContext]);
+		if(bundles::item_ptr item = OakShowMenuForBundleItems(items, [self positionForWindowUnderCaret]))
+		{
+			[self performBundleItem:item];
+		}
+		else if(items.empty())
+		{
+			if(LocalBindings.find(to_s(anEvent)) != LocalBindings.end())
+					[self handleKeyBindingAction:KeyBindings[to_s(anEvent)]];
+			else	[self.inputContext handleEvent:anEvent];
+		}
 	}
 
 	[NSCursor setHiddenUntilMouseMoves:YES];
