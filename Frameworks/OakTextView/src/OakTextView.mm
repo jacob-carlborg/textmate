@@ -2100,9 +2100,15 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 
 bool handleDotCompletion(NSEvent* event, OakTextView* textView)
 {
-	auto const& items = bundles::query(bundles::kFieldSemanticClass, "callback.dot-completion", [textView scopeContext]);
+	std::unordered_map<std::string, std::string> fieldValues = {
+		{bundles::kFieldSemanticClass, "callback.completion"},
+		{bundles::kFieldCompletionCharacters, to_s(event)}
+	};
 
-	if(!items.empty() && to_s(event) == ".")
+	auto const& items = bundles::query(fieldValues, [textView scopeContext]);
+	NSLog(@"handleDotCompletion %d\n", items.empty());
+
+	if(!items.empty())
 	{
 		if (auto item = OakShowMenuForBundleItems(items, [textView positionForWindowUnderCaret]))
 		{

@@ -1,6 +1,8 @@
 #ifndef BUNDLES_ITEM_H_H2GEVOXK
 #define BUNDLES_ITEM_H_H2GEVOXK
 
+#include <unordered_map>
+
 #include <oak/misc.h>
 #include <plist/plist.h>
 #include <scope/scope.h>
@@ -9,6 +11,7 @@ namespace fs { struct node_t; }
 
 namespace bundles
 {
+	using FieldValues = std::unordered_map<std::string, std::string>;
 	enum kind_t { kItemTypeCommand = 1, kItemTypeDragCommand = 2, kItemTypeGrammar = 4, kItemTypeMacro = 8, kItemTypeSettings = 16, kItemTypeSnippet = 32, kItemTypeProxy = 64, kItemTypeTheme = 128, kItemTypeBundle = 256, kItemTypeMenu = 512, kItemTypeMenuItemSeparator = 1024, kItemTypeUnknown = 2048 };
 
 	PUBLIC extern int kItemTypeMenuTypes;
@@ -25,6 +28,7 @@ namespace bundles
 	PUBLIC extern std::string const kFieldScopeSelector;
 
 	PUBLIC extern std::string const kFieldSemanticClass;
+	PUBLIC extern std::string const kFieldCompletionCharacters;
 	PUBLIC extern std::string const kFieldContentMatch;
 	PUBLIC extern std::string const kFieldDropExtension;
 	PUBLIC extern std::string const kFieldGrammarExtension;
@@ -80,6 +84,7 @@ namespace bundles
 		bool initialize (plist::dictionary_t const& plist);
 		void set_plist (plist::dictionary_t const& plist, bool shouldInitialize = true);
 		bool does_match (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank);
+		bool does_match (FieldValues const& fieldValues, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank);
 
 	private:
 		struct required_bundle_t

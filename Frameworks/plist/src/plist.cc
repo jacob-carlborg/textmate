@@ -109,6 +109,8 @@ namespace plist
 
 	dictionary_t load (std::string const& path)
 	{
+		if (path == "/Users/jacob/Library/Application Support/TextMate/Bundles/D.tmbundle/Commands/Complete.tmCommand")
+			printf("*********************** load path=%s\n", path.c_str());
 		dictionary_t res;
 		if(FILE* fp = fopen(path.c_str(), "r"))
 		{

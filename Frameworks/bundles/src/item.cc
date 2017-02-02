@@ -27,6 +27,7 @@ namespace bundles
 	std::string const kFieldScopeSelector            = "scope";
 
 	std::string const kFieldSemanticClass            = "semanticClass";
+	std::string const kFieldCompletionCharacters     = "completionCharacters";
 	std::string const kFieldContentMatch             = "contentMatch";
 	std::string const kFieldDropExtension            = "draggedFileExtensions"; // array
 	std::string const kFieldGrammarExtension         = "fileTypes";             // array
@@ -77,8 +78,18 @@ namespace bundles
 
 		for(auto const& pair : plist)
 		{
-			static std::set<std::string> const stringKeys     = { kFieldName, kFieldKeyEquivalent, kFieldTabTrigger, kFieldScopeSelector, kFieldSemanticClass, kFieldContentMatch, kFieldGrammarFirstLineMatch, kFieldGrammarScope, kFieldGrammarInjectionSelector };
+			static std::set<std::string> const stringKeys     = { kFieldName, kFieldKeyEquivalent, kFieldTabTrigger, kFieldScopeSelector, kFieldSemanticClass, kFieldCompletionCharacters, kFieldContentMatch, kFieldGrammarFirstLineMatch, kFieldGrammarScope, kFieldGrammarInjectionSelector };
 			static std::set<std::string> const arrayKeys      = { kFieldDropExtension, kFieldGrammarExtension };
+
+			if (pair.first == kFieldUUID && *boost::get<std::string>(&pair.second) == std::string("DE80CCA9-6CD2-45DB-BBD0-534FF8B24D82"))
+			{
+				for(auto const& p : plist)
+				{
+					auto valuePtr = boost::get<std::string>(&p.second);
+					auto value = valuePtr ? (*valuePtr).c_str() : "******** NO VALUE *********";
+					printf("************* field=%s value=%s\n", p.first.c_str(), value);
+				}
+			}
 
 			if(pair.first == kFieldScopeSelector)
 			{
@@ -92,6 +103,11 @@ namespace bundles
 					if(pair.first == kFieldSemanticClass)
 					{
 						for(std::string const& value : text::split(*str, ","))
+							_fields.emplace(pair.first, text::trim(value));
+					}
+					else if(pair.first == kFieldSemanticClass)
+					{printf("initialize field=%s\n", pair.first.c_str());
+						for(std::string const& value : text::split(*str, " "))
 							_fields.emplace(pair.first, text::trim(value));
 					}
 					else
@@ -314,6 +330,22 @@ namespace bundles
 		match = match && (_kind & kind) == _kind;
 		match = match && (!bundle || bundle == bundle_uuid());
 		return match;
+	}
+
+	bool item_t::does_match (FieldValues const& fieldValues, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank)
+	{
+		if (fieldValues.empty())
+			return false;
+
+		for (const auto& e : fieldValues)
+		{
+			auto match = does_match(e.first, e.second, scope, kind, bundle, rank);
+//			printf("****** does_match field=%s value=%s match=%d\n", e.first.c_str(), e.second.c_str(), match);
+			if (!match)
+				return false;
+		}
+
+		return true;
 	}
 
 	plist::dictionary_t erase_false_values (plist::dictionary_t const& plist)

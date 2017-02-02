@@ -23,6 +23,7 @@ static NSUInteger const kBundleItemKeyEquivalentField  = 1;
 static NSUInteger const kBundleItemTabTriggerField     = 2;
 static NSUInteger const kBundleItemSemanticClassField  = 3;
 static NSUInteger const kBundleItemScopeSelectorField  = 4;
+static NSUInteger const kBundleItemCompletionCharactersField  = 5;
 
 static NSUInteger const kSearchSourceActionItems      = (1 << 0);
 static NSUInteger const kSearchSourceSettingsItems    = (1 << 1);
@@ -68,6 +69,7 @@ static NSString* OakMenuItemIdentifier (NSMenuItem* menuItem)
 @property (nonatomic) NSString* scopeSelector;
 @property (nonatomic) NSString* semanticClass;
 @property (nonatomic) BOOL eclipsed; // Settings or key binding item
+@property (nonatomic) NSString* completionCharacters;
 @end
 
 @implementation ActionItem
@@ -134,6 +136,8 @@ static NSString* OakMenuItemIdentifier (NSMenuItem* menuItem)
 			rank = OakContainsString(_tabTrigger, to_ns(filter)) ? rank : 0;
 		else if(bundleItemField == kBundleItemSemanticClassField)
 			rank = OakContainsString(_semanticClass, to_ns(filter)) ? rank : 0;
+		else if(bundleItemField == kBundleItemCompletionCharactersField)
+			rank = OakContainsString(_completionCharacters, to_ns(filter)) ? rank : 0;
 		else if(bundleItemField == kBundleItemScopeSelectorField)
 			rank = OakContainsString(_scopeSelector, to_ns(filter)) ? rank : 0;
 	}
@@ -455,6 +459,7 @@ static std::vector<bundles::item_ptr> relevant_items_in_scope (scope::context_t 
 			{ @"Tab Trigger",    kBundleItemTabTriggerField    },
 			{ @"Semantic Class", kBundleItemSemanticClassField },
 			{ @"Scope Selector", kBundleItemScopeSelectorField },
+			{ @"Completion Characters", kBundleItemCompletionCharactersField },
 		};
 
 		char key = 0;
@@ -764,6 +769,7 @@ static std::vector<bundles::item_ptr> relevant_items_in_scope (scope::context_t 
 				item.keyEquivalent = to_ns(key_equivalent(bundleItem));
 				item.tabTrigger    = to_ns(bundleItem->value_for_field(bundles::kFieldTabTrigger));
 				item.semanticClass = to_ns(text::join(bundleItem->values_for_field(bundles::kFieldSemanticClass), ", "));
+				item.completionCharacters = to_ns(text::join(bundleItem->values_for_field(bundles::kFieldCompletionCharacters), " "));
 				[items addObject:item];
 			}
 			else
@@ -935,7 +941,7 @@ static std::vector<bundles::item_ptr> relevant_items_in_scope (scope::context_t 
 	if(self.tableView.selectedRow != -1)
 	{
 		if(ActionItem* item = self.items[self.tableView.selectedRow])
-			status = item.semanticClass ?: item.scopeSelector ?: NSStringFromSelector(item.action);
+			status = item.semanticClass ?: item.completionCharacters ?: item.scopeSelector ?: NSStringFromSelector(item.action);
 	}
 	self.statusTextField.stringValue = status ?: @"";
 
