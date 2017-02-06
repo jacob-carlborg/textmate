@@ -2124,7 +2124,9 @@ bool handleDotCompletion(NSEvent* event, OakTextView* textView)
 			auto index = textView->documentView->index_at_point(localPoint).index;
 
 
-			auto s = textView->documentView->substr(index - 2, index - 1);
+			//auto s = textView->documentView->substr(index - 2, index - 1);
+			auto s = to_s([textView.document.content substringWithRange:NSMakeRange(textView.selectedRange.location-1, 1)]);
+
 			NSLog(@"handleDotCompletion cc='%s' substr='%s' index=%lu max=%lu x=%f y=%f flipped=%d\n", cc.c_str(), s.c_str(), index, textView->documentView->size(), localPoint.x, localPoint.y, textView.isFlipped);
 
 
