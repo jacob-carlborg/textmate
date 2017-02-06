@@ -2111,15 +2111,21 @@ bool handleDotCompletion(NSEvent* event, OakTextView* textView)
 
 	if(!items.empty())
 	{
-		if (auto item = OakShowMenuForBundleItems(items, [textView positionForWindowUnderCaret]))
+		auto caretPosition = [textView positionForWindowUnderCaret];
+		if (auto item = OakShowMenuForBundleItems(items, caretPosition))
 		{
 			auto cc = item->find_completion_character(eventString);
 
-			auto localPoint = [textView positionForWindowUnderCaret];
-			auto index = textView->documentView->index_at_point(localPoint);
+			//auto localPoint = [textView convertPoint:caretPosition fromView:nil];
 
-			auto s = textView->documentView->substr(index.index - 1, index.index);
-			NSLog(@"handleDotCompletion cc=%s substr=%s index=%lu max=%lu x=%f y=%f\n", cc.c_str(), s.c_str(), index.index, textView->documentView->size(), localPoint.x, localPoint.y);
+			//auto index = textView->documentView->index_at_point(localPoint);
+			//auto index = [textView characterIndexForPoint:caretPosition];
+			auto localPoint = [textView convertPoint:[[textView window] convertRectFromScreen:(NSRect){ caretPosition, NSZeroSize }].origin fromView:nil];
+			auto index = textView->documentView->index_at_point(localPoint).index;
+
+
+			auto s = textView->documentView->substr(index - 2, index - 1);
+			NSLog(@"handleDotCompletion cc='%s' substr='%s' index=%lu max=%lu x=%f y=%f flipped=%d\n", cc.c_str(), s.c_str(), index, textView->documentView->size(), localPoint.x, localPoint.y, textView.isFlipped);
 
 
 
