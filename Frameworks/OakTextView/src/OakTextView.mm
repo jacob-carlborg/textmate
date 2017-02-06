@@ -2100,9 +2100,10 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 
 bool handleDotCompletion(NSEvent* event, OakTextView* textView)
 {
+	auto eventString = to_s(event);
 	std::unordered_map<std::string, std::string> fieldValues = {
 		{bundles::kFieldSemanticClass, "callback.completion"},
-		{bundles::kFieldCompletionCharacters, to_s(event)}
+		{bundles::kFieldCompletionCharacters, eventString}
 	};
 
 	auto const& items = bundles::query(fieldValues, [textView scopeContext]);
@@ -2112,6 +2113,16 @@ bool handleDotCompletion(NSEvent* event, OakTextView* textView)
 	{
 		if (auto item = OakShowMenuForBundleItems(items, [textView positionForWindowUnderCaret]))
 		{
+			auto cc = item->find_completion_character(eventString);
+
+			auto localPoint = [textView positionForWindowUnderCaret];
+			auto index = textView->documentView->index_at_point(localPoint);
+
+			auto s = textView->documentView->substr(index.index - 1, index.index);
+			NSLog(@"handleDotCompletion cc=%s substr=%s index=%lu max=%lu x=%f y=%f\n", cc.c_str(), s.c_str(), index.index, textView->documentView->size(), localPoint.x, localPoint.y);
+
+
+
 			[textView.inputContext handleEvent:event];
 			[textView performBundleItem:item];
 			return true;

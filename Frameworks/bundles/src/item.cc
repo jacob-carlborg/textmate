@@ -7,6 +7,7 @@
 #include <text/parse.h>
 #include <text/trim.h>
 #include <regexp/format_string.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace bundles
 {
@@ -316,6 +317,25 @@ namespace bundles
 		return it == _fields.end() ? fallback : it->second;
 	}
 
+	std::string item_t::find_completion_character(std::string const& charToFind) const
+	{
+		return find_completion_character(value_for_field(kFieldCompletionCharacters), charToFind);
+	}
+
+	std::string item_t::find_completion_character(std::string const& complectionCharacters, std::string const& charToFind) const
+	{
+		static std::string const fallback = NULL_STR;
+
+		auto chars = text::split(complectionCharacters, " ");
+		auto end = std::end(chars);
+
+		auto result = std::find_if(std::begin(chars), end, [&charToFind](auto const& str){
+			return boost::algorithm::ends_with(str, charToFind);
+		});
+
+		return result == end ? fallback : *result;
+	}
+
 	bool item_t::does_match (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank)
 	{
 		bool match = true;
@@ -323,7 +343,14 @@ namespace bundles
 		{
 			match = false;
 			foreach(pair, _fields.lower_bound(field), _fields.upper_bound(field))
-				match = match || pair->second == value || (field == kFieldSemanticClass && pair->second.size() > value.size() && pair->second.find(value) == 0 && pair->second[value.size()] == '.');
+			{
+				if(match || pair->second == value)
+					match = true;
+				else if(field == kFieldCompletionCharacters)
+					match = find_completion_character(pair->second, value) != NULL_STR;
+				else
+					match = field == kFieldSemanticClass && pair->second.size() > value.size() && pair->second.find(value) == 0 && pair->second[value.size()] == '.';
+			}
 		}
 
 		match = match && (scope == scope::wildcard || _scope_selector.does_match(scope, rank));

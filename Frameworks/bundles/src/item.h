@@ -73,6 +73,7 @@ namespace bundles
 
 		std::vector<std::string> values_for_field (std::string const& field) const;
 		std::string const& value_for_field (std::string const& field) const;
+		std::string find_completion_character(std::string const& charToFind) const;
 
 		bool save (bool useDeltaIfNonLocal = true);
 		bool save_to (std::string const& folder);
@@ -121,6 +122,8 @@ namespace bundles
 		std::vector<required_bundle_t> _required_bundles;
 		std::vector<required_executable_t> _required_executables;
 		oak::uuid_t _parent_menu;
+
+		std::string find_completion_character(std::string const& complectionCharacters, std::string const& charToFind) const;
 	};
 
 } /* bundles */
