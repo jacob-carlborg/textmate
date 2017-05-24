@@ -28,7 +28,13 @@ enum OTVFontSmoothing : NSUInteger
 - (std::map<std::string, std::string>)variables;
 @end
 
+struct document_view_t;
+
 PUBLIC @interface OakTextView : OakView
+{
+	std::shared_ptr<document_view_t> documentView;
+}
+
 @property (nonatomic) OakDocument* document;
 
 @property (nonatomic, weak) id <OakTextViewDelegate>        delegate;
@@ -72,4 +78,7 @@ PUBLIC @interface OakTextView : OakView
 
 - (void)performBundleItem:(bundles::item_ptr)anItem;
 - (void)updateEnvironment:(std::map<std::string, std::string>&)res;
+@end
+
+@interface MinimapView : OakTextView
 @end

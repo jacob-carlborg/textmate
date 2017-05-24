@@ -465,7 +465,6 @@ private:
 {
 	OBJC_WATCH_LEAKS(OakTextView);
 
-	std::shared_ptr<document_view_t> documentView;
 	ng::callback_t* callback;
 
 	BOOL hideCaret;
@@ -4471,4 +4470,33 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	[self.window presentError:anError modalForWindow:self.window delegate:nil didPresentSelector:NULL contextInfo:nullptr];
 	return NO;
 }
+@end
+
+@implementation MinimapView
+
+- (id)initWithFrame:(NSRect)aRect
+{
+	if(self = [super initWithFrame:aRect])
+	{
+	}
+
+	return self;
+}
+
+- (void)setDocument:(OakDocument*)aDocument
+{
+	[super setDocument:aDocument];
+
+	if (aDocument)
+	{
+		self.fontScaleFactor = 0.2;
+		documentView->set_draw_wrap_column(false);
+	}
+}
+
+- (BOOL)acceptsFirstResponder
+{
+	return NO;
+}
+
 @end
