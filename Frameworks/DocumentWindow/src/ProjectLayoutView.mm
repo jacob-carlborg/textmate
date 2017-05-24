@@ -9,10 +9,8 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 
 @interface ProjectLayoutView ()
 @property (nonatomic) NSView* fileBrowserDivider;
-@property (nonatomic) NSView* minimapDivider;
 @property (nonatomic) NSView* htmlOutputDivider;
 @property (nonatomic) NSLayoutConstraint* fileBrowserWidthConstraint;
-@property (nonatomic) NSLayoutConstraint* minimapWidthConstraint;
 @property (nonatomic) NSLayoutConstraint* htmlOutputSizeConstraint;
 @property (nonatomic) NSMutableArray* myConstraints;
 @property (nonatomic) BOOL mouseDownRecursionGuard;
@@ -34,8 +32,6 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 		_myConstraints    = [NSMutableArray array];
 		_fileBrowserWidth = [[NSUserDefaults standardUserDefaults] integerForKey:kUserDefaultsFileBrowserWidthKey];
 		_htmlOutputSize   = NSSizeFromString([[NSUserDefaults standardUserDefaults] stringForKey:kUserDefaultsHTMLOutputSizeKey]);
-		_minimapOnRight = YES;
-		_minimapWidth = 150.0;
 
 		[self userDefaultsDidChange:nil];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDefaultsDidChange:) name:NSUserDefaultsDidChangeNotification object:[NSUserDefaults standardUserDefaults]];
@@ -94,13 +90,6 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 	[self updateKeyViewLoop];
 }
 
-- (void)setMinimapView:(NSView*)aMinimapView
-{NSLog(@"***************** setMinimapView");
-	_minimapDivider = [self replaceView:_minimapDivider withView:aMinimapView ? OakCreateVerticalLine([NSColor controlShadowColor], nil, 1) : nil];
-	_minimapView = [self replaceView:_minimapView withView:aMinimapView];
-	[self updateKeyViewLoop];
-}
-
 - (void)setFileBrowserOnRight:(BOOL)flag
 {
 	if(_fileBrowserOnRight != flag)
@@ -146,8 +135,6 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 		@"documentView"               : _documentView,
 		@"fileBrowserView"            : _fileBrowserView            ?: [NSNull null],
 		@"fileBrowserDivider"         : _fileBrowserDivider         ?: [NSNull null],
-		@"minimapView"                : _minimapView                ?: [NSNull null],
-		@"minimapDivider"             : _minimapDivider             ?: [NSNull null],
 		@"htmlOutputView"             : _htmlOutputView             ?: [NSNull null],
 		@"htmlOutputDivider"          : _htmlOutputDivider          ?: [NSNull null],
 	};
@@ -184,7 +171,7 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 	if(_fileBrowserView && !_fileBrowserOnRight)
 		CONSTRAINT(@"H:[fileBrowserDivider][documentView]", 0);
 	else
-		CONSTRAINT(@"H:|[documentView][minimapDivider]", 0);
+		CONSTRAINT(@"H:|[documentView]", 0);
 
 	// right
 	if(_htmlOutputView && _htmlOutputOnRight)
@@ -192,7 +179,7 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 	else if(_fileBrowserView && _fileBrowserOnRight)
 		CONSTRAINT(@"H:[documentView][fileBrowserDivider]", 0);
 	else
-		CONSTRAINT(@"H:[documentView][minimapDivider]", 0);
+		CONSTRAINT(@"H:[documentView]|", 0);
 
 	// =======================
 	// = Anchor File Browser =
@@ -271,35 +258,6 @@ NSString* const kUserDefaultsHTMLOutputSizeKey   = @"htmlOutputSize";
 			CONSTRAINT(@"H:|[htmlOutputView]|", 0);
 			CONSTRAINT(@"H:|[htmlOutputDivider]|", 0);
 		}
-	}
-
-	// ===========================
-	// = Anchor Minimap View =
-	// ===========================
-
-	if(_minimapView)
-	{
-		// width
-		self.minimapWidthConstraint = [NSLayoutConstraint constraintWithItem:_minimapView attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:_minimapWidth];
-		self.minimapWidthConstraint.priority = NSLayoutPriorityDragThatCannotResizeWindow;
-		[_myConstraints addObject:self.minimapWidthConstraint];
-
-		// top
-		CONSTRAINT(@"V:|[tabBarView][minimapDivider]", 0);
-		if(_tabsAboveDocument)
-			CONSTRAINT(@"V:|[minimapView]", 0);
-		else
-			CONSTRAINT(@"V:|[tabBarView][minimapView]", 0);
-
-		// bottom
-		CONSTRAINT(@"V:[minimapView]|", 0);
-		CONSTRAINT(@"V:[minimapDivider]|", 0);
-
-		// left
-		CONSTRAINT(@"H:[documentView][minimapDivider][minimapView]", 0);
-
-		// right
-		CONSTRAINT(@"H:[minimapView]|", 0);
 	}
 
 	[self addConstraints:_myConstraints];

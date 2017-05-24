@@ -26,7 +26,7 @@ PUBLIC NSComboBox* OakCreateComboBox (NSObject* accessibilityLabel = nil);
 PUBLIC OakRolloverButton* OakCreateCloseButton (NSString* accessibilityLabel = @"Close document");
 PUBLIC NSView* OakCreateDividerImageView ();
 
-PUBLIC OakBackgroundFillView* OakCreateVerticalLine (NSColor* primaryColor, NSColor* secondaryColor = nil, int constant = 1);
+PUBLIC OakBackgroundFillView* OakCreateVerticalLine (NSColor* primaryColor, NSColor* secondaryColor = nil);
 PUBLIC OakBackgroundFillView* OakCreateHorizontalLine (NSColor* primaryColor, NSColor* secondaryColor = nil);
 PUBLIC void OakSetupKeyViewLoop (NSArray* views, BOOL setFirstResponder = YES);
 PUBLIC void OakAddAutoLayoutViewsToSuperview (NSArray* views, NSView* superview);
