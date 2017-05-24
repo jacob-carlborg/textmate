@@ -53,9 +53,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 
 	NSScrollView* textScrollView;
 
-	OakBackgroundFillView* minimapDividerView;
-	OakTextView* minimapView;
-	NSScrollView* minimapScrollView;
+	MinimapView* minimapView;
 
 	NSMutableArray* topAuxiliaryViews;
 	NSMutableArray* bottomAuxiliaryViews;
@@ -84,16 +82,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		textScrollView.borderType            = NSNoBorder;
 		textScrollView.documentView          = _textView;
 
-		minimapDividerView = OakCreateVerticalLine([NSColor controlShadowColor], nil);
 		minimapView = [[MinimapView alloc] initWithFrame:NSZeroRect];
-		minimapView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
-
-		minimapScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
-		minimapScrollView.hasVerticalScroller   = YES;
-		minimapScrollView.hasHorizontalScroller = YES;
-		minimapScrollView.autohidesScrollers    = YES;
-		minimapScrollView.borderType            = NSNoBorder;
-		minimapScrollView.documentView          = minimapView;
 
 		gutterView = [[GutterView alloc] initWithFrame:NSZeroRect];
 		gutterView.partnerView = _textView;
@@ -115,7 +104,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		_statusBar.delegate = self;
 		_statusBar.target = self;
 
-		OakAddAutoLayoutViewsToSuperview(@[ gutterScrollView, gutterDividerView, textScrollView, minimapScrollView, minimapDividerView, statusDividerView, _statusBar ], self);
+		OakAddAutoLayoutViewsToSuperview(@[ gutterScrollView, gutterDividerView, textScrollView, minimapView, statusDividerView, _statusBar ], self);
 		OakSetupKeyViewLoop(@[ self, _textView, _statusBar ], NO);
 
 		self.document = [OakDocument documentWithString:@"" fileType:@"text.plain" customName:@"placeholder"];
@@ -143,7 +132,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[_statusBar(==statusDividerView)]|" options:NSLayoutFormatAlignAllLeft|NSLayoutFormatAlignAllRight metrics:nil views:NSDictionaryOfVariableBindings(statusDividerView, _statusBar)]];
 	}
 
-	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[gutterScrollView(==gutterView)][gutterDividerView][textScrollView(>=100)][minimapDividerView][minimapScrollView(150)]|" options:NSLayoutFormatAlignAllTop|NSLayoutFormatAlignAllBottom metrics:nil views:NSDictionaryOfVariableBindings(gutterScrollView, gutterView, gutterDividerView, textScrollView, minimapScrollView, minimapView, minimapDividerView)]];
+	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[gutterScrollView(==gutterView)][gutterDividerView][textScrollView(>=100)][minimapView]|" options:NSLayoutFormatAlignAllTop|NSLayoutFormatAlignAllBottom metrics:nil views:NSDictionaryOfVariableBindings(gutterScrollView, gutterView, gutterDividerView, textScrollView, minimapView)]];
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[topView]" options:0 metrics:nil views:@{ @"topView" : stackedViews[0] }]];
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[bottomView]|" options:0 metrics:nil views:@{ @"bottomView" : [stackedViews lastObject] }]];
 

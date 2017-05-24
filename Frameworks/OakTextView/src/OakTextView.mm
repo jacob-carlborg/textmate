@@ -12,6 +12,7 @@
 #import <OakAppKit/OakPasteboard.h>
 #import <OakAppKit/OakPopOutAnimation.h>
 #import <OakAppKit/OakToolTip.h>
+#import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakFoundation/NSString Additions.h>
 #import <OakFoundation/OakFoundation.h>
 #import <OakFoundation/OakFindProtocol.h>
@@ -4472,12 +4473,67 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 }
 @end
 
+@interface MinimapView ()
+{
+	OakBackgroundFillView* dividerView;
+	OakTextView* textView;
+	NSScrollView* scrollView;
+}
+@end
+
 @implementation MinimapView
 
 - (id)initWithFrame:(NSRect)aRect
 {
 	if(self = [super initWithFrame:aRect])
 	{
+		dividerView = OakCreateVerticalLine([NSColor controlShadowColor], nil);
+		textView = [[MinimapTextView alloc] initWithFrame:NSZeroRect];
+		textView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+
+		scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+		scrollView.hasVerticalScroller   = YES;
+		scrollView.hasHorizontalScroller = YES;
+		scrollView.autohidesScrollers    = YES;
+		scrollView.borderType            = NSNoBorder;
+		scrollView.documentView          = textView;
+
+		OakAddAutoLayoutViewsToSuperview(@[ dividerView, scrollView ], self);
+	}
+
+	return self;
+}
+
+- (BOOL)isFlipped
+{
+	return YES;
+}
+
+- (void)updateConstraints
+{
+	[self removeConstraints:[self constraints]];
+	[super updateConstraints];
+
+	auto views = NSDictionaryOfVariableBindings(dividerView, scrollView, textView);
+
+	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[scrollView]|" options:0 metrics:nil views:views]];
+	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[dividerView][scrollView(150)]|" options:0 metrics:nil views:views]];
+}
+
+- (void)setDocument:(OakDocument*)aDocument
+{
+	[textView setDocument:aDocument];
+}
+
+@end
+
+@implementation MinimapTextView
+
+- (id)initWithFrame:(NSRect)aRect
+{
+	if(self = [super initWithFrame:aRect])
+	{
+
 	}
 
 	return self;

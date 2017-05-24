@@ -80,5 +80,9 @@ PUBLIC @interface OakTextView : OakView
 - (void)updateEnvironment:(std::map<std::string, std::string>&)res;
 @end
 
-@interface MinimapView : OakTextView
+@interface MinimapView : NSView
+- (void)setDocument:(OakDocument*)aDocument;
+@end
+
+@interface MinimapTextView : OakTextView
 @end
