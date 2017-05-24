@@ -81,6 +81,25 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 }
 @end
 
+@interface MinimapView : OakTextView
+{
+	OBJC_WATCH_LEAKS(MinimapView);
+}
+@end
+
+@implementation MinimapView
+
+- (id)initWithFrame:(NSRect)aRect
+{
+	if(self = [super initWithFrame:aRect])
+	{
+	}
+
+	return self;
+}
+
+@end
+
 @interface DocumentWindowController () <NSWindowDelegate, OakTabBarViewDelegate, OakTabBarViewDataSource, OakTextViewDelegate, OakFileBrowserDelegate, QLPreviewPanelDelegate, QLPreviewPanelDataSource>
 {
 	OBJC_WATCH_LEAKS(DocumentWindowController);
@@ -101,6 +120,7 @@ static void show_command_error (std::string const& message, oak::uuid_t const& u
 @property (nonatomic) OakDocumentView*            documentView;
 @property (nonatomic) OakTextView*                textView;
 @property (nonatomic) OakFileBrowser*             fileBrowser;
+@property (nonatomic) OakDocumentView*            minimapView;
 
 @property (nonatomic) BOOL                        disableFileBrowserWindowResize;
 @property (nonatomic) BOOL                        autoRevealFile;
@@ -231,6 +251,15 @@ static NSArray* const kObservedKeyPaths = @[ @"arrayController.arrangedObjects.p
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(fileManagerWillDeleteItemAtPath:) name:OakFileManagerWillDeleteItemAtPath object:nil];
 
 		[self userDefaultsDidChange:nil];
+
+
+//		NSBox* rectView = [[NSBox alloc] initWithFrame:NSMakeRect(500, 100, 100, 100)];
+//		rectView.fillColor = [NSColor blackColor];
+//		self.layoutView.minimapView = rectView;
+
+		MinimapView* minimapView = [[MinimapView alloc] init];
+		minimapView.delegate = self;
+		self.layoutView.minimapView = minimapView;
 	}
 	return self;
 }

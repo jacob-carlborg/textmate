@@ -227,12 +227,12 @@ OakRolloverButton* OakCreateCloseButton (NSString* accessibilityLabel)
 }
 @end
 
-OakBackgroundFillView* OakCreateVerticalLine (NSColor* primaryColor, NSColor* secondaryColor)
+OakBackgroundFillView* OakCreateVerticalLine (NSColor* primaryColor, NSColor* secondaryColor, int constant)
 {
 	OakBackgroundFillView* view = [[OakBackgroundFillView alloc] initWithFrame:NSZeroRect];
 	view.activeBackgroundColor   = primaryColor;
 	view.inactiveBackgroundColor = secondaryColor;
-	[view addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:1]];
+	[view addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:constant]];
 	view.translatesAutoresizingMaskIntoConstraints = NO;
 	return view;
 }
