@@ -51,8 +51,6 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 	OakBackgroundFillView* gutterDividerView;
 	OakBackgroundFillView* statusDividerView;
 
-	NSScrollView* textScrollView;
-
 	MinimapView* minimapView;
 
 	NSMutableArray* topAuxiliaryViews;
@@ -75,14 +73,14 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		_textView = [[OakTextView alloc] initWithFrame:NSZeroRect];
 		_textView.autoresizingMask = NSViewWidthSizable|NSViewHeightSizable;
 
-		textScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
-		textScrollView.hasVerticalScroller   = YES;
-		textScrollView.hasHorizontalScroller = YES;
-		textScrollView.autohidesScrollers    = YES;
-		textScrollView.borderType            = NSNoBorder;
-		textScrollView.documentView          = _textView;
+		_textScrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+		_textScrollView.hasVerticalScroller   = YES;
+		_textScrollView.hasHorizontalScroller = YES;
+		_textScrollView.autohidesScrollers    = YES;
+		_textScrollView.borderType            = NSNoBorder;
+		_textScrollView.documentView          = _textView;
 
-		minimapView = [[MinimapView alloc] initWithFrame:NSZeroRect];
+		minimapView = [[MinimapView alloc] initWithEditor:self];
 
 		gutterView = [[GutterView alloc] initWithFrame:NSZeroRect];
 		gutterView.partnerView = _textView;
@@ -104,7 +102,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		_statusBar.delegate = self;
 		_statusBar.target = self;
 
-		OakAddAutoLayoutViewsToSuperview(@[ gutterScrollView, gutterDividerView, textScrollView, minimapView, statusDividerView, _statusBar ], self);
+		OakAddAutoLayoutViewsToSuperview(@[ gutterScrollView, gutterDividerView, _textScrollView, minimapView, statusDividerView, _statusBar ], self);
 		OakSetupKeyViewLoop(@[ self, _textView, _statusBar ], NO);
 
 		self.document = [OakDocument documentWithString:@"" fileType:@"text.plain" customName:@"placeholder"];
@@ -132,7 +130,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 		[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[_statusBar(==statusDividerView)]|" options:NSLayoutFormatAlignAllLeft|NSLayoutFormatAlignAllRight metrics:nil views:NSDictionaryOfVariableBindings(statusDividerView, _statusBar)]];
 	}
 
-	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[gutterScrollView(==gutterView)][gutterDividerView][textScrollView(>=100)][minimapView]|" options:NSLayoutFormatAlignAllTop|NSLayoutFormatAlignAllBottom metrics:nil views:NSDictionaryOfVariableBindings(gutterScrollView, gutterView, gutterDividerView, textScrollView, minimapView)]];
+	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[gutterScrollView(==gutterView)][gutterDividerView][_textScrollView(>=100)][minimapView]|" options:NSLayoutFormatAlignAllTop|NSLayoutFormatAlignAllBottom metrics:nil views:NSDictionaryOfVariableBindings(gutterScrollView, gutterView, gutterDividerView, _textScrollView, minimapView)]];
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[topView]" options:0 metrics:nil views:@{ @"topView" : stackedViews[0] }]];
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:[bottomView]|" options:0 metrics:nil views:@{ @"bottomView" : [stackedViews lastObject] }]];
 
@@ -347,19 +345,19 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 	if(theme_ptr theme = _textView.theme)
 	{
 		[[self window] setOpaque:!theme->is_transparent() && !theme->gutter_styles().is_transparent()];
-		[textScrollView setBackgroundColor:[NSColor colorWithCGColor:theme->background(to_s(self.document.fileType))]];
+		[_textScrollView setBackgroundColor:[NSColor colorWithCGColor:theme->background(to_s(self.document.fileType))]];
 
 		if(theme->is_dark())
 		{
 			NSImage* whiteIBeamImage = [NSImage imageNamed:@"IBeam white" inSameBundleAsClass:[self class]];
 			[whiteIBeamImage setSize:[[[NSCursor IBeamCursor] image] size]];
 			[_textView setIbeamCursor:[[NSCursor alloc] initWithImage:whiteIBeamImage hotSpot:NSMakePoint(4, 9)]];
-			[textScrollView setScrollerKnobStyle:NSScrollerKnobStyleLight];
+			[_textScrollView setScrollerKnobStyle:NSScrollerKnobStyleLight];
 		}
 		else
 		{
 			[_textView setIbeamCursor:[NSCursor IBeamCursor]];
-			[textScrollView setScrollerKnobStyle:NSScrollerKnobStyleDark];
+			[_textScrollView setScrollerKnobStyle:NSScrollerKnobStyleDark];
 		}
 
 		[self updateGutterViewFont:self]; // trigger update of gutter view’s line number font

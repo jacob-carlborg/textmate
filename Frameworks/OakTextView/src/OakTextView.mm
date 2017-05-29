@@ -4042,7 +4042,7 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 }
 
 - (void)mouseDragged:(NSEvent*)anEvent
-{
+{NSLog(@"************************** OakTextView mouseDragged");
 	if([self.inputContext handleEvent:anEvent] || !documentView || macroRecordingArray)
 		return;
 
@@ -4476,27 +4476,40 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 @interface MinimapView ()
 {
 	OakBackgroundFillView* dividerView;
-	OakTextView* textView;
+	MinimapTextView* textView;
 	NSScrollView* scrollView;
+
+	OakDocumentView* editor;
+	OakTextView* editorTextView;
 }
 @end
 
 @implementation MinimapView
 
-- (id)initWithFrame:(NSRect)aRect
+- (instancetype)initWithEditor:(OakDocumentView*)anEditor
 {
-	if(self = [super initWithFrame:aRect])
+	if(self = [super init])
 	{
+		editor = anEditor;
+		editorTextView = editor.textView;
+
 		dividerView = OakCreateVerticalLine([NSColor controlShadowColor], nil);
 		textView = [[MinimapTextView alloc] initWithFrame:NSZeroRect];
-		textView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
 
 		scrollView = [[NSScrollView alloc] initWithFrame:NSZeroRect];
-		scrollView.hasVerticalScroller   = YES;
-		scrollView.hasHorizontalScroller = YES;
-		scrollView.autohidesScrollers    = YES;
-		scrollView.borderType            = NSNoBorder;
-		scrollView.documentView          = textView;
+		scrollView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+		scrollView.drawsBackground = NO;
+		scrollView.allowsMagnification = NO;
+		scrollView.minMagnification = 0.0;
+		scrollView.maxMagnification = 1.0;
+
+		scrollView.hasVerticalScroller = NO;
+		scrollView.hasHorizontalScroller = NO;
+		scrollView.horizontalScrollElasticity = NSScrollElasticityNone;
+		scrollView.verticalScrollElasticity = NSScrollElasticityNone;
+		scrollView.documentView = textView;
+
+		textView.editorScrollView = editor.textScrollView;
 
 		OakAddAutoLayoutViewsToSuperview(@[ dividerView, scrollView ], self);
 	}
@@ -4509,12 +4522,17 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	return YES;
 }
 
+- (BOOL)acceptsFirstResponder
+{
+	return YES;
+}
+
 - (void)updateConstraints
 {
 	[self removeConstraints:[self constraints]];
 	[super updateConstraints];
 
-	auto views = NSDictionaryOfVariableBindings(dividerView, scrollView, textView);
+	auto views = NSDictionaryOfVariableBindings(dividerView, scrollView);
 
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|[scrollView]|" options:0 metrics:nil views:views]];
 	[self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[dividerView][scrollView(150)]|" options:0 metrics:nil views:views]];
@@ -4523,6 +4541,61 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 - (void)setDocument:(OakDocument*)aDocument
 {
 	[textView setDocument:aDocument];
+}
+
+#pragma mark - Navigation
+
+- (void)mouseUp:(NSEvent*)anEvent
+{
+	[super mouseUp:anEvent];
+	[self handleMouseEvent:anEvent];
+}
+
+- (void)mouseDown:(NSEvent*)anEvent
+{
+	[super mouseDown:anEvent];
+	[self handleMouseEvent:anEvent];
+}
+
+- (void)mouseDragged:(NSEvent*)anEvent
+{
+	[super mouseDragged:anEvent];
+	[self handleMouseEvent:anEvent];
+}
+
+- (void)scrollWheel:(NSEvent*)anEvent
+{
+	NSLog(@"*********************** scrollWheel");
+	[editor.textScrollView scrollWheel:anEvent];
+}
+
+- (void)handleMouseEvent:(NSEvent*)anEvent
+{
+	NSLog(@"*********************** handleMouseEvent");
+
+	NSPoint point = [textView convertPoint:anEvent.locationInWindow fromView:nil];
+	NSUInteger characterIndex = [textView characterIndexForPoint:point];
+	NSRange lineRange = [textView.string lineRangeForRange:NSMakeRange(characterIndex, 0)];
+//	NSRange activeRange = [textView.layoutManager glyphRangeForCharacterRange:lineRange actualCharacterRange:NULL];
+	NSRange activeRange = NSMakeRange(20, 20);
+
+//	NSRect neededRect = [editorTextView.layoutManager boundingRectForGlyphRange:activeRange inTextContainer:editorTextView.textContainer];
+	NSRect neededRect = NSMakeRect(20, 20, 20, 20);//textView.documentView->rect_for_range(lineRange.location, lineRange.length);
+	neededRect.origin.y = MAX(0, neededRect.origin.y - CGRectGetHeight(editor.bounds) / 2);
+	neededRect.origin.y += CGRectGetMinY(editorTextView.frame);
+
+	BOOL shouldAnimateContentOffset = (anEvent.type != NSLeftMouseDragged);
+
+	if(shouldAnimateContentOffset) {
+		[NSAnimationContext beginGrouping];
+		[[NSAnimationContext currentContext] setDuration:0.25f];
+		[editor.textScrollView.contentView.animator setBoundsOrigin:CGPointMake(0, neededRect.origin.y)];
+		[editor.textScrollView reflectScrolledClipView:editor.textScrollView.contentView];
+		[NSAnimationContext endGrouping];
+	} else {
+		NSLog(@"*********************** neededRect.origin.y=%f", neededRect.origin.y);
+		[editor.textScrollView.contentView setBoundsOrigin:CGPointMake(0, neededRect.origin.y)];
+	}
 }
 
 @end
@@ -4539,6 +4612,23 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 	return self;
 }
 
+- (BOOL)acceptsFirstResponder
+{
+	return NO;
+}
+
+- (void)mouseDragged:(NSEvent*)anEvent
+{
+	[self.nextResponder mouseDragged:anEvent];
+}
+
+- (void)scrollWheel:(NSEvent*)anEvent
+{
+	NSLog(@"*********************** MinimapTextView scrollWheel, event=%@", anEvent);
+//	[self.nextResponder scrollWheel:anEvent];
+//	[self.editorScrollView scrollWheel:anEvent];
+}
+
 - (void)setDocument:(OakDocument*)aDocument
 {
 	[super setDocument:aDocument];
@@ -4548,11 +4638,6 @@ static scope::context_t add_modifiers_to_scope (scope::context_t scope, NSUInteg
 		self.fontScaleFactor = 0.2;
 		documentView->set_draw_wrap_column(false);
 	}
-}
-
-- (BOOL)acceptsFirstResponder
-{
-	return NO;
 }
 
 @end

@@ -9,6 +9,7 @@ PUBLIC extern int32_t const NSWrapColumnAskUser;
 PUBLIC extern NSString* const kUserDefaultsWrapColumnPresetsKey;
 
 @class OakDocument;
+@class OakDocumentView;
 
 namespace bundles { struct item_t; typedef std::shared_ptr<item_t> item_ptr; }
 
@@ -81,8 +82,10 @@ PUBLIC @interface OakTextView : OakView
 @end
 
 @interface MinimapView : NSView
+- (instancetype)initWithEditor:(OakDocumentView*)anEditor;
 - (void)setDocument:(OakDocument*)aDocument;
 @end
 
 @interface MinimapTextView : OakTextView
+@property (nonatomic) NSScrollView* editorScrollView;
 @end
