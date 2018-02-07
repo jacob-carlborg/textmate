@@ -2098,18 +2098,35 @@ static void update_menu_key_equivalents (NSMenu* menu, std::multimap<std::string
 	return NO;
 }
 
+bool handleLineMatchingTrigger(NSEvent* event, OakTextView* textView)
+{
+	NSLog(@"************* handleLineMatchingTrigger");
+	return false;
+}
+
 - (void)oldKeyDown:(NSEvent*)anEvent
 {
-	std::vector<bundles::item_ptr> const& items = bundles::query(bundles::kFieldKeyEquivalent, to_s(anEvent), [self scopeContext]);
-	if(bundles::item_ptr item = OakShowMenuForBundleItems(items, [self positionForWindowUnderCaret]))
+	if(!handleLineMatchingTrigger(anEvent, self))
 	{
-		[self performBundleItem:item];
-	}
-	else if(items.empty())
-	{
-		if(LocalBindings.find(to_s(anEvent)) != LocalBindings.end())
-				[self handleKeyBindingAction:KeyBindings[to_s(anEvent)]];
-		else	[self.inputContext handleEvent:anEvent];
+		std::vector<bundles::item_ptr> const& items = bundles::query(bundles::kFieldKeyEquivalent, to_s(anEvent), [self scopeContext]);
+		if(bundles::item_ptr item = OakShowMenuForBundleItems(items, [self positionForWindowUnderCaret]))
+		{NSLog(@"************* keyEquivalent performBundleItem");
+			[self performBundleItem:item];
+		}
+		else
+		{
+			auto const& items = bundles::query(bundles::kFieldLineMatchingTrigger, "slides.", [self scopeContext]);
+			if(auto item = OakShowMenuForBundleItems(items, [self positionForWindowUnderCaret]))
+			{NSLog(@"************* lineMatchingTrigger performBundleItem");
+				[self performBundleItem:item];
+			}
+			else if(items.empty())
+			{
+				if(LocalBindings.find(to_s(anEvent)) != LocalBindings.end())
+					[self handleKeyBindingAction:KeyBindings[to_s(anEvent)]];
+				else	[self.inputContext handleEvent:anEvent];
+			}
+		}
 	}
 
 	[NSCursor setHiddenUntilMouseMoves:YES];

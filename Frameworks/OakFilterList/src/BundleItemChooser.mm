@@ -18,11 +18,12 @@
 #import <regexp/format_string.h>
 #import <ns/ns.h>
 
-static NSUInteger const kBundleItemTitleField          = 0;
-static NSUInteger const kBundleItemKeyEquivalentField  = 1;
-static NSUInteger const kBundleItemTabTriggerField     = 2;
-static NSUInteger const kBundleItemSemanticClassField  = 3;
-static NSUInteger const kBundleItemScopeSelectorField  = 4;
+static NSUInteger const kBundleItemTitleField                = 0;
+static NSUInteger const kBundleItemKeyEquivalentField        = 1;
+static NSUInteger const kBundleItemTabTriggerField           = 2;
+static NSUInteger const kBundleItemSemanticClassField        = 3;
+static NSUInteger const kBundleItemScopeSelectorField        = 4;
+static NSUInteger const kBundleItemLineMatchingTriggerField  = 5;
 
 static NSUInteger const kSearchSourceActionItems      = (1 << 0);
 static NSUInteger const kSearchSourceSettingsItems    = (1 << 1);
@@ -68,6 +69,7 @@ static NSString* OakMenuItemIdentifier (NSMenuItem* menuItem)
 @property (nonatomic) NSString* scopeSelector;
 @property (nonatomic) NSString* semanticClass;
 @property (nonatomic) BOOL eclipsed; // Settings or key binding item
+@property (nonatomic) NSString* lineMatchingTrigger;
 @end
 
 @implementation ActionItem
@@ -134,6 +136,8 @@ static NSString* OakMenuItemIdentifier (NSMenuItem* menuItem)
 			rank = OakContainsString(_tabTrigger, to_ns(filter)) ? rank : 0;
 		else if(bundleItemField == kBundleItemSemanticClassField)
 			rank = OakContainsString(_semanticClass, to_ns(filter)) ? rank : 0;
+		else if(bundleItemField == kBundleItemLineMatchingTriggerField)
+			rank = OakContainsString(_lineMatchingTrigger, to_ns(filter)) ? rank : 0;
 		else if(bundleItemField == kBundleItemScopeSelectorField)
 			rank = OakContainsString(_scopeSelector, to_ns(filter)) ? rank : 0;
 	}
@@ -450,11 +454,12 @@ static std::vector<bundles::item_ptr> relevant_items_in_scope (scope::context_t 
 
 		struct { NSString* title; NSUInteger tag; } const fields[] =
 		{
-			{ @"Title",          kBundleItemTitleField         },
-			{ @"Key Equivalent", kBundleItemKeyEquivalentField },
-			{ @"Tab Trigger",    kBundleItemTabTriggerField    },
-			{ @"Semantic Class", kBundleItemSemanticClassField },
-			{ @"Scope Selector", kBundleItemScopeSelectorField },
+			{ @"Title",                 kBundleItemTitleField               },
+			{ @"Key Equivalent",        kBundleItemKeyEquivalentField       },
+			{ @"Tab Trigger",           kBundleItemTabTriggerField          },
+			{ @"Semantic Class",        kBundleItemSemanticClassField       },
+			{ @"Scope Selector",        kBundleItemScopeSelectorField       },
+			{ @"Line Matching Trigger", kBundleItemLineMatchingTriggerField },
 		};
 
 		char key = 0;
@@ -935,7 +940,7 @@ static std::vector<bundles::item_ptr> relevant_items_in_scope (scope::context_t 
 	if(self.tableView.selectedRow != -1)
 	{
 		if(ActionItem* item = self.items[self.tableView.selectedRow])
-			status = item.semanticClass ?: item.scopeSelector ?: NSStringFromSelector(item.action);
+			status = item.semanticClass ?: item.lineMatchingTrigger ?: item.scopeSelector ?: NSStringFromSelector(item.action);
 	}
 	self.statusTextField.stringValue = status ?: @"";
 

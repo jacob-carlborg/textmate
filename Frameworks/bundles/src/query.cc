@@ -222,11 +222,13 @@ namespace bundles
 	}
 
 	static void cache_search (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, bool includeDisabledItems, bool resolveProxyItems, std::multimap<double, item_ptr>& ordered)
-	{
+	{printf("********* cache_search field: %s, value: %s\n", field.c_str(), value.c_str());
 		std::lock_guard<std::recursive_mutex> lock(cache().mutex());
 		std::multimap<std::string, item_ptr> const& values = cache().fetch(field);
 		foreach(pair, values.lower_bound(value), field == kFieldSemanticClass ? values.lower_bound(value + "/") : values.upper_bound(value)) // Since kFieldSemanticClass is a prefix match we want lower bound of the first item after the last possible prefix (which would be “value.zzzzz…” → “value/”).
+
 		{
+			printf("********* cache_search foreach field: %s, value: %s\n", field.c_str(), value.c_str());
 			double rank = 1.0;
 			if(pair->second->does_match(field, value, scope, kind, bundle, &rank))
 			{
@@ -239,6 +241,7 @@ namespace bundles
 
 	static void linear_search (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, bool includeDisabledItems, bool resolveProxyItems, std::multimap<double, item_ptr>& ordered)
 	{
+		printf("********* linear_search field: %s, value: %s\n", field.c_str(), value.c_str());
 		for(auto const& item : AllItems)
 		{
 			if(is_deleted(item) || !includeDisabledItems && is_disabled(item))
@@ -256,14 +259,14 @@ namespace bundles
 
 	static void search (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, bool includeDisabledItems, bool resolveProxyItems, std::multimap<double, item_ptr>& ordered)
 	{
-		static auto const CachedFields = new std::set<std::string>{ kFieldKeyEquivalent, kFieldTabTrigger, kFieldSemanticClass, kFieldGrammarScope, kFieldSettingName };
+		static auto const CachedFields = new std::set<std::string>{ kFieldKeyEquivalent, kFieldTabTrigger, kFieldSemanticClass, kFieldLineMatchingTrigger, kFieldGrammarScope, kFieldSettingName };
 		if(!includeDisabledItems && !bundle && CachedFields->find(field) != CachedFields->end())
 				cache_search(field, value, scope, kind, bundle, includeDisabledItems, resolveProxyItems, ordered);
 		else	linear_search(field, value, scope, kind, bundle, includeDisabledItems, resolveProxyItems, ordered);
 	}
 
 	std::vector<item_ptr> query (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, bool filter, bool includeDisabledItems, bool resolveProxyItems)
-	{
+	{printf("********* field: %s, value: %s\n", field.c_str(), value.c_str());
 		std::multimap<double, item_ptr> ordered;
 		search(field, value, scope, kind, bundle, includeDisabledItems, resolveProxyItems, ordered);
 

@@ -25,6 +25,7 @@ namespace bundles
 	PUBLIC extern std::string const kFieldScopeSelector;
 
 	PUBLIC extern std::string const kFieldSemanticClass;
+	PUBLIC extern std::string const kFieldLineMatchingTrigger;
 	PUBLIC extern std::string const kFieldContentMatch;
 	PUBLIC extern std::string const kFieldDropExtension;
 	PUBLIC extern std::string const kFieldGrammarExtension;

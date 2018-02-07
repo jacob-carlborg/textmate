@@ -27,6 +27,7 @@ namespace bundles
 	std::string const kFieldScopeSelector            = "scope";
 
 	std::string const kFieldSemanticClass            = "semanticClass";
+	std::string	const kFieldLineMatchingTrigger      = "lineMatchingTrigger";
 	std::string const kFieldContentMatch             = "contentMatch";
 	std::string const kFieldDropExtension            = "draggedFileExtensions"; // array
 	std::string const kFieldGrammarExtension         = "fileTypes";             // array
@@ -77,7 +78,7 @@ namespace bundles
 
 		for(auto const& pair : plist)
 		{
-			static std::set<std::string> const stringKeys     = { kFieldName, kFieldKeyEquivalent, kFieldTabTrigger, kFieldScopeSelector, kFieldSemanticClass, kFieldContentMatch, kFieldGrammarFirstLineMatch, kFieldGrammarScope, kFieldGrammarInjectionSelector };
+			static std::set<std::string> const stringKeys     = { kFieldName, kFieldKeyEquivalent, kFieldTabTrigger, kFieldScopeSelector, kFieldSemanticClass, kFieldLineMatchingTrigger, kFieldContentMatch, kFieldGrammarFirstLineMatch, kFieldGrammarScope, kFieldGrammarInjectionSelector };
 			static std::set<std::string> const arrayKeys      = { kFieldDropExtension, kFieldGrammarExtension };
 
 			if(pair.first == kFieldScopeSelector)
@@ -301,13 +302,23 @@ namespace bundles
 	}
 
 	bool item_t::does_match (std::string const& field, std::string const& value, scope::context_t const& scope, int kind, oak::uuid_t const& bundle, double* rank)
-	{
+	{printf("************************* item_t::does_match field: %s, value: %s\n", field.c_str(), value.c_str());
 		bool match = true;
 		if(field != kFieldAny)
 		{
 			match = false;
 			foreach(pair, _fields.lower_bound(field), _fields.upper_bound(field))
-				match = match || pair->second == value || (field == kFieldSemanticClass && pair->second.size() > value.size() && pair->second.find(value) == 0 && pair->second[value.size()] == '.');
+			{
+				if(match || pair->second == value)
+					match = true;
+				else if(field == kFieldLineMatchingTrigger)
+				{
+					printf("************************* pair->second: %s, value: %s\n", pair->second.c_str(), value.c_str());
+					match = regexp::search(pair->second, value).did_match();
+				}
+				else
+					match = field == kFieldSemanticClass && pair->second.size() > value.size() && pair->second.find(value) == 0 && pair->second[value.size()] == '.';
+			}
 		}
 
 		match = match && (scope == scope::wildcard || _scope_selector.does_match(scope, rank));
